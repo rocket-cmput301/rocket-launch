@@ -19,8 +19,8 @@ object FakeBackend {
             Campsite(
                 id = "c1",
                 ownerId = OWNER_1,
-                name = "Hinton Pines",
-                location = "Hinton, AB",
+                name = "abdous crib",
+                location = "Edmonton, AB",
                 maxOccupancy = 8,
                 pricePerNight = 65.0
             )
