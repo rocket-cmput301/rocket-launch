@@ -66,21 +66,35 @@ private fun OwnerScreen(vm: CampsiteViewModel) {
 private fun EntrantScreen(vm: CampsiteViewModel) {
     val campsites by vm.allCampsites.collectAsStateWithLifecycle()
     val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
+    var viewFilterScreen by remember { mutableStateOf(false) }
 
-    LazyColumn {
-        item { Text("Campsites (Book = May 7 to 9, 2027, 2 guests)") }
-        items(campsites, key = { it.id }) { campsite ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("${campsite.name} - ${campsite.location}", Modifier.weight(1f))
-                Button(onClick = { vm.book(campsite, "2027-05-07", "2027-05-09", 2) }) {
-                    Text("Book")
+    if (viewFilterScreen) {     // screen for an entrant's choice of filters
+        MakeFilterScreen(confirmFilters = {distanceFilter, dates, numGuests, preferences ,turnOffFilterScreen ->
+            //apply filters to the search once that user story is completed
+            viewFilterScreen = turnOffFilterScreen
+        })
+    }
+
+    else{                       // screen for an entrant's viewed campsites
+        Button(onClick = {      //access Filter Campsites screen via toggle
+            viewFilterScreen = !viewFilterScreen
+        }) { Text("Select Filters") }
+
+        LazyColumn {
+            item { Text("Campsites (Book = May 7 to 9, 2027, 2 guests)") }
+            items(campsites, key = { it.id }) { campsite ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("${campsite.name} - ${campsite.location}", Modifier.weight(1f))
+                    Button(onClick = { vm.book(campsite, "2027-05-07", "2027-05-09", 2) }) {
+                        Text("Book")
+                    }
                 }
             }
-        }
 
-        item { Text("My reservations") }
-        items(reservations, key = { it.id }) {
-            Text("${it.checkInDate} to ${it.checkOutDate} - ${it.numberOfGuests} guests")
+            item { Text("My reservations") }
+            items(reservations, key = { it.id }) {
+                Text("${it.checkInDate} to ${it.checkOutDate} - ${it.numberOfGuests} guests")
+            }
         }
     }
 }
