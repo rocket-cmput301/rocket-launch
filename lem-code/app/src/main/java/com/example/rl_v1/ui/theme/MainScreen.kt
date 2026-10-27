@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+
 /** Simplest possible screen: a role toggle, buttons, and lists. */
 @Composable
 fun MainScreen(vm: CampsiteViewModel = viewModel()) {
@@ -48,6 +49,11 @@ private fun OwnerScreen(vm: CampsiteViewModel) {
             Button(onClick = {
                 vm.publish("Campsite ${campsites.size + 1}", "Banff, AB", 6, 80.0)
             }) { Text("Publish a campsite") }
+        }
+        item {
+            Button(onClick = { vm.clearMessage() }){
+                Text("Register")
+            }
         }
 
         item { Text("My campsites") }

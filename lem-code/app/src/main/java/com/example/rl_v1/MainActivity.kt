@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.rl_v1.ui.theme.MainScreen
 import com.example.rl_v1.ui.theme.Rlv1Theme
+import com.example.rl_v1.ui.theme.screens.CampsiteRegistrationScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
