@@ -76,11 +76,11 @@ fun LargeButtonSecondary(
 }
 
 @Composable
-fun SmallButtonPrimary(
+fun SelectableSmallButtonPrimary(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    selected: Boolean = true,
+    selected: Boolean = false,
     enabled: Boolean = true
 ) {
     val containerColor by animateColorAsState(

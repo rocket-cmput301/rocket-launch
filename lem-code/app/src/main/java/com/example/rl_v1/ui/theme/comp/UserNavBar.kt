@@ -6,14 +6,16 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.PersonOutline
@@ -23,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -34,11 +35,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.example.rl_v1.ui.theme.Cream
 import com.example.rl_v1.ui.theme.DarkGreen
 import com.example.rl_v1.ui.theme.GreyGreen
@@ -61,7 +57,9 @@ fun AppBottomBar(
     modifier: Modifier = Modifier
 ) {
     NavigationBar(
-        modifier = modifier,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(80.dp),
         containerColor = Color.White,
         tonalElevation = 0.dp
     ) {
@@ -112,7 +110,7 @@ private fun BottomBarItem(
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(40.dp)                       // was 48.dp
                 .clip(CircleShape)
                 .background(circleColor),
             contentAlignment = Alignment.Center
@@ -124,11 +122,14 @@ private fun BottomBarItem(
                 modifier = Modifier.size(24.dp)
             )
         }
+        Spacer(Modifier.height(2.dp))
         Text(
             text = tab.label,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = if (tab.boldLabel) FontWeight.Bold else FontWeight.Normal,
-            color = labelColor
+            color = labelColor,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }

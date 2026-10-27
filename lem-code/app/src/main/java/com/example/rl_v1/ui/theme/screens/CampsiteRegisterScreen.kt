@@ -17,15 +17,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rl_v1.ui.theme.CampsiteViewModel
+import androidx.compose.ui.platform.LocalInspectionMode
 import com.example.rl_v1.ui.theme.comp.AppInputTextField
 import com.example.rl_v1.ui.theme.comp.AppBottomBar
 import com.example.rl_v1.ui.theme.comp.ScreenHeader
 import com.example.rl_v1.ui.theme.comp.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.comp.LargeButtonSecondary
+import com.example.rl_v1.ui.theme.comp.SelectableSmallButtonPrimary
 
 
 @Composable
-fun CampsiteRegistrationScreen(vm: CampsiteViewModel = viewModel()){
+fun CampsiteRegistrationScreen(
+    vm: CampsiteViewModel? = if (LocalInspectionMode.current) null else viewModel()
+) {
 
     var name by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
@@ -52,6 +56,9 @@ fun CampsiteRegistrationScreen(vm: CampsiteViewModel = viewModel()){
         }
         item {
             LargeButtonPrimary("Publish Campsite", onClick = {Unit})
+        }
+        item {
+            SelectableSmallButtonPrimary("poop", onClick = {Unit})
         }
 
     }
