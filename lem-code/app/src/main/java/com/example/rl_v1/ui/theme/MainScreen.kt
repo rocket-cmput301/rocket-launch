@@ -19,6 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 
 /** Simplest possible screen: a role toggle, buttons, and lists. */
 @Composable
@@ -64,18 +68,37 @@ private fun OwnerScreen(vm: CampsiteViewModel) {
 
 @Composable
 private fun EntrantScreen(vm: CampsiteViewModel) {
-    val campsites by vm.allCampsites.collectAsStateWithLifecycle()
+    val campsites by vm.searchedCampsites.collectAsStateWithLifecycle()
+    val query by vm.searchQuery.collectAsStateWithLifecycle()
     val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
 
     LazyColumn {
+        item {
+            OutlinedTextField(
+                value = query,
+                onValueChange = vm::setSearchQuery,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Search by name or location") },
+                singleLine = true
+            )
+        }
+
         item { Text("Campsites (Book = May 7 to 9, 2027, 2 guests)") }
+
+        if (campsites.isEmpty() && query.isNotBlank()) {
+            item { Text("No campsites match your search.") }
+        }
+
         items(campsites, key = { it.id }) { campsite ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("${campsite.name} - ${campsite.location}", Modifier.weight(1f))
-                Button(onClick = { vm.book(campsite, "2027-05-07", "2027-05-09", 2) }) {
-                    Text("Book")
+            CampsiteCard(
+                campsite,
+                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                trailing = {
+                    Button(onClick = { vm.book(campsite, "2027-05-07", "2027-05-09", 2) }) {
+                        Text("Book")
+                    }
                 }
-            }
+            )
         }
 
         item { Text("My reservations") }

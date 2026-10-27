@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.example.rl_v1.search.search
+import kotlinx.coroutines.flow.combine
 
 /**
  * connects campsite screens to Firestore .
@@ -35,6 +37,20 @@ class CampsiteViewModel(
     val allCampsites = campsiteRepo
         .observeAllCampsites()
         .asState(emptyList())
+
+    private val _searchQuery = MutableStateFlow("")
+
+    /** the text currently in the search bar. */
+    val searchQuery: StateFlow<String> = _searchQuery
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    /** all campsites narrowed by the search text. */
+    val searchedCampsites: StateFlow<List<Campsite>> =
+        combine(allCampsites, _searchQuery) { list, query -> list.search(query) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val ownerCampsites = campsiteRepo
         .observeCampsitesByOwner(userId)

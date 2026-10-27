@@ -44,6 +44,9 @@ class FirestoreCampsiteRepository(
         ) {
             "Price must be between 0 and 100000"
         }
+        require(campsite.rating == 0.0 && campsite.ratingCount == 0) {
+            "New campsites start without ratings"
+        }
 
         val document = campsites.document()
         val savedCampsite = campsite.copy(id = document.id)
