@@ -9,6 +9,15 @@
  * @property location Where the campsite is, e.g. "Hinton, AB".
  * @property maxOccupancy Maximum number of guests.
  * @property pricePerNight Price for one night, in dollars.
+ * @property rating Average rating of the campsite, e.g. 4.9.
+ * @property ratingCount Number of ratings; 0 means no ratings yet.
+ * @property description Free-text description of the campsite.
+ * @property amenities What the campsite offers, e.g. "Cookhouse".
+ * @property latitude Map location latitude, or null if not set.
+ * @property longitude Map location longitude, or null if not set.
+ * @property imageUrl Optional promotional image URL (not displayed yet).
+ * @property rules House rules guests must follow.
+ * @property cancellationPolicy Cancellation terms.
  */
 package com.example.rl_v1.model
 
@@ -19,4 +28,13 @@ data class Campsite(
     val location: String = "",
     val maxOccupancy: Int = 0,
     val pricePerNight: Double = 0.0,
+    val rating: Double = 0.0,
+    val ratingCount: Int = 0,
+    val description: String = "",
+    val amenities: List<String> = emptyList(),
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val imageUrl: String? = null,
+    val rules: String = "",
+    val cancellationPolicy: String = ""
 )
