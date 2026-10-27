@@ -7,34 +7,21 @@
 
 package com.example.rl_v1.ui.theme
 
-import android.R
-import android.renderscript.ScriptIntrinsicYuvToRGB
-import android.widget.Button
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
-import androidx.compose.material3.DateRangePickerState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,17 +36,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.rl_v1.ui.theme.MakeFilterSection
-import java.text.ChoiceFormat
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.Year
 import java.util.Date
 import java.util.Locale
-import kotlin.math.truncate
-import kotlin.reflect.typeOf
 
 @Composable
 /**
@@ -71,6 +55,7 @@ public fun MakeFilterScreen(
     confirmFilters: (Int, Pair<String,String>, Int, ArrayList<String>, Boolean) -> Unit
 ){
     val deviceLocation by remember {mutableStateOf("Canmore")}
+    val formatter = SimpleDateFormat("MM/dd/yyyy",Locale.getDefault())
 
     //save these filters to get pushed up
     var selectedDistance by remember { mutableIntStateOf(10) }
@@ -114,17 +99,24 @@ public fun MakeFilterScreen(
             }
         }
 
-        MakeFilterSection("Stay date(s)", "${selectedDates.first} - ${selectedDates.second}\n$daysBooked days", buttonAction = {
+        MakeFilterSection("Stay date(s)",
+            subheader = if (daysBooked.toInt() != 1) "${selectedDates.first} - ${selectedDates.second}\n$daysBooked days" else "${selectedDates.first} - ${selectedDates.second}\n 1 day",
+            buttonAction = {
             activeFilterBooleans[1] = !activeFilterBooleans[1]
         })
         if (activeFilterBooleans[1]){
             DateRangePickerModal(
-                onDateRangeSelected = {
-                    val formatter = SimpleDateFormat("MM/dd/yyyy",Locale.getDefault())
-                    val difference = it.second!! - it.first!!
-                    daysBooked = difference / 86400000   //millisecond calculation, 86400000 milliseconds in a day
-                    selectedDates = Pair(formatter.format(Date(it.first!!)),formatter.format(Date(it.second!!)))
-                    activeFilterBooleans[1] = true
+
+                onDateRangeSelected = { valid, pair ->
+                    if (valid){
+                        val difference = pair.second!! - pair.first!!
+                        val milsInADay = 86400000
+                        daysBooked = difference / milsInADay   //millisecond calculation, 86400000 milliseconds in a day
+                        selectedDates = Pair(formatter.format(Date(pair.first!!+milsInADay)),formatter.format(Date(pair.second!!+milsInADay)))      //added an extra day because everything is off by 1 for some reason
+                    }
+                    else{
+                        selectedDates = Pair("Invalid Date Input","Invalid Date Input")
+                    }
                 },
                 onDismiss = {activeFilterBooleans[1] = false}
             )
@@ -221,23 +213,52 @@ private fun MakeFilterSection(header: String, subheader: String, buttonAction: (
  */
 @Composable
 fun DateRangePickerModal(
-    onDateRangeSelected: (Pair<Long?, Long?>) -> Unit,
+    onDateRangeSelected: (Boolean, Pair<Long?, Long?>) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val dateRangePickerState = rememberDateRangePickerState()
+    val todayDate = remember { LocalDate.now() }
+    val todayYear = remember { Year.now().value }
+    val dateRangePickerState = rememberDateRangePickerState(yearRange = IntRange(todayYear,todayYear+1))  //can only filter within 1 year of booking
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
                 onClick = {
-                    onDateRangeSelected(
-                        Pair(
-                            dateRangePickerState.selectedStartDateMillis,
-                            dateRangePickerState.selectedEndDateMillis
-                        )
+                    /** restrictions include:
+                     *  - can only book within 1 year (implemented)
+                     *  - can't pick dates that have passed (implemented)
+                     *  - can't pick dates that don't exist (implemented)
+                     *  - must pick two dates, if booking for one day just pick the same day twice - can't fix for some reason?
+                     */
+
+                    val formatter = SimpleDateFormat("MM-dd-yyyy",Locale.getDefault())
+                    val proposedDates = Pair(
+                        formatter.format(Date(dateRangePickerState.selectedStartDateMillis!!)),
+                        formatter.format(Date(dateRangePickerState.selectedEndDateMillis!!))
                     )
-                    onDismiss()
+                    if (proposedDates.first.substring(0,2).toInt() < todayDate.monthValue ||
+                        proposedDates.first.substring(3,5).toInt()+1 < todayDate.dayOfMonth ||     //for some reason, first date is off by 1
+                        proposedDates.first == null ||
+                        proposedDates.second == null){  //applies above restrictions
+                        onDateRangeSelected(
+                            false,
+                            Pair(null, null)
+                        )
+                        onDismiss()
+                    }
+                    else{       //if dates are valid
+                        onDateRangeSelected(
+                            true,
+                            Pair(
+                                dateRangePickerState.selectedStartDateMillis,
+                                dateRangePickerState.selectedEndDateMillis
+                            )
+                        )
+                        onDismiss()
+                    }
+
+
                 }
             ) {
                 Text("OK")
