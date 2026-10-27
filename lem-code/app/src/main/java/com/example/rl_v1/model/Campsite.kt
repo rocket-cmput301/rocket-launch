@@ -18,6 +18,8 @@
  * @property imageUrl Optional promotional image URL (not displayed yet).
  * @property rules House rules guests must follow.
  * @property cancellationPolicy Cancellation terms.
+ * @property availability Dates the campsite posting is available to be reserved.
+ * @property geographicFeatures Features near / around the Campsite
  */
 package com.example.rl_v1.model
 
@@ -36,5 +38,7 @@ data class Campsite(
     val longitude: Double? = null,
     val imageUrl: String? = null,
     val rules: String = "",
-    val cancellationPolicy: String = ""
+    val cancellationPolicy: String = "",
+    val availability: Pair<String, String> = Pair("",""), //written in mm/dd/yyyy, the date formatting is weird in Compose
+    val geographicFeature: List<String> = emptyList()
 )
