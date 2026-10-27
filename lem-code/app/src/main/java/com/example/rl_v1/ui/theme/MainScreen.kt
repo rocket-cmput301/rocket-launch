@@ -52,11 +52,6 @@ private fun OwnerScreen(vm: CampsiteViewModel) {
                 vm.publish("Campsite ${campsites.size + 1}", "Banff, AB", 6, 80.0)
             }) { Text("Publish a campsite") }
         }
-        item {
-            Button(onClick = { vm.clearMessage() }){
-                Text("Register")
-            }
-        }
 
         item { Text("My campsites") }
         items(campsites, key = { it.id }) {
@@ -76,6 +71,19 @@ private fun EntrantScreen(vm: CampsiteViewModel) {
     val allCampsites by vm.allCampsites.collectAsStateWithLifecycle()
     val query by vm.searchQuery.collectAsStateWithLifecycle()
     val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
+    var viewFilterScreen by remember { mutableStateOf(false) }
+
+    if (viewFilterScreen) {     // screen for an entrant's choice of filters
+        MakeFilterScreen(confirmFilters = {distanceFilter, dates, numGuests, preferences ,turnOffFilterScreen ->
+            //apply filters to the search once that user story is completed
+            viewFilterScreen = turnOffFilterScreen
+        })
+    }
+
+    else{                       // screen for an entrant's viewed campsites
+        Button(onClick = {      //access Filter Campsites screen via toggle
+            viewFilterScreen = !viewFilterScreen
+        }) { Text("Select Filters") }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Looked up in the full list, so typing in search can't close the details
@@ -86,6 +94,16 @@ private fun EntrantScreen(vm: CampsiteViewModel) {
         return
     }
 
+        LazyColumn {
+            item { Text("Campsites (Book = May 7 to 9, 2027, 2 guests)") }
+            items(campsites, key = { it.id }) { campsite ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("${campsite.name} - ${campsite.location}", Modifier.weight(1f))
+                    Button(onClick = { vm.book(campsite, "2027-05-07", "2027-05-09", 2) }) {
+                        Text("Book")
+                    }
+                }
+            }
     LazyColumn {
         item {
             OutlinedTextField(
@@ -116,9 +134,10 @@ private fun EntrantScreen(vm: CampsiteViewModel) {
             )
         }
 
-        item { Text("My reservations") }
-        items(reservations, key = { it.id }) {
-            Text("${it.checkInDate} to ${it.checkOutDate} - ${it.numberOfGuests} guests")
+            item { Text("My reservations") }
+            items(reservations, key = { it.id }) {
+                Text("${it.checkInDate} to ${it.checkOutDate} - ${it.numberOfGuests} guests")
+            }
         }
     }
 }
