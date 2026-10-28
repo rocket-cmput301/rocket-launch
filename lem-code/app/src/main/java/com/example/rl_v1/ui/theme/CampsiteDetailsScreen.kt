@@ -52,6 +52,7 @@ fun CampsiteDetailsScreen(campsite: Campsite, onBack: () -> Unit) {
 
         DetailSection("Location", naIfBlank(campsite.location))
 
+        DetailSection("Availability", naIfBlank("${campsite.availability.first} - ${campsite.availability.second}"))
         DetailSection(
             "Rating",
             if (campsite.ratingCount <= 0) "N/A"
@@ -92,6 +93,11 @@ fun CampsiteDetailsScreen(campsite: Campsite, onBack: () -> Unit) {
 
         DetailSection("Rules", naIfBlank(campsite.rules))
         DetailSection("Cancellation policy", naIfBlank(campsite.cancellationPolicy))
+        var gFeatures: String = ""
+        for (feature in campsite.geographicFeature){
+            gFeatures += ("$feature, ")
+        }
+        DetailSection("Geographic Features",naIfBlank(gFeatures))
     }
 }
 

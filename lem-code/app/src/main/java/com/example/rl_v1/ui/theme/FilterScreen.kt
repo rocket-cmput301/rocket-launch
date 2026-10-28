@@ -178,6 +178,17 @@ public fun MakeFilterScreen(
                 contentColor = Color.White
             )
         ){ Text("Show Campsites")}      // original says: "Show 12 campsites" for campsites that filter properly, will have to come back to this
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            Button(
+                onClick = {
+                    selectedDistance = 10
+                    selectedDates = Pair("mm/dd/yyyy","mm/dd/yyyy")
+                    numGuests = 4
+                    selectedPreferences[0] = false; selectedPreferences[1] = false; selectedPreferences[2] = false
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = selectedChoiceColor, contentColor = Color.White)
+            ){Text("Reset Filters")}
+        }
     }
 }
 

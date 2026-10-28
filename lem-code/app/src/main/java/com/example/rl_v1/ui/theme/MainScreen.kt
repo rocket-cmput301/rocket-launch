@@ -77,11 +77,8 @@ private fun EntrantScreen(vm: CampsiteViewModel) {
 
     if (viewFilterScreen) {     // screen for an entrant's choice of filters
         MakeFilterScreen(confirmFilters = { distanceFilter, dates, numGuests, preferences, turnOffFilterScreen ->
-
-            //distanceFilter needs to be connected to maps to determine device -> location distance
-            //
-
-            viewFilterScreen = turnOffFilterScreen  //last step: get rid of filter screen
+            vm.setFilters(distanceFilter, dates, numGuests, preferences)
+            viewFilterScreen = turnOffFilterScreen  //last step: get rid of filter screen to refresh search
         })
 
     }
