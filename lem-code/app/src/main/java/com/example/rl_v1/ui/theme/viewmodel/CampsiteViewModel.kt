@@ -1,4 +1,4 @@
-package com.example.rl_v1.ui.theme
+package com.example.rl_v1.ui.theme.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -6,6 +6,8 @@ import com.example.rl_v1.model.Campsite
 import com.example.rl_v1.model.Reservation
 import com.example.rl_v1.repository.CampsiteRepository
 import com.example.rl_v1.repository.FirestoreCampsiteRepository
+import com.example.rl_v1.search.filterBy
+import com.example.rl_v1.search.search
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -13,11 +15,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.example.rl_v1.search.search
-import kotlinx.coroutines.flow.combine
-import com.example.rl_v1.search.filterBy
 
 /**
  * connects campsite screens to Firestore .
@@ -52,8 +52,8 @@ class CampsiteViewModel(
 
     /** all campsites narrowed by the search text. */
     var searchedCampsites: StateFlow<List<Campsite>> =
-        combine(allCampsites, _searchQuery, _filters){
-            list, query, filter -> list.search(query).filterBy(filter);
+        combine(allCampsites, _searchQuery, _filters) { list, query, filter ->
+            list.search(query).filterBy(filter);
         }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
