@@ -1,5 +1,6 @@
 package com.example.rl_v1.search
 
+import com.example.rl_v1.ui.theme.CampsiteViewModel.Filters
 import com.example.rl_v1.model.Campsite
 
 /**
@@ -23,4 +24,38 @@ fun List<Campsite>.search(query: String): List<Campsite> {
 private fun Campsite.matchCount(words: List<String>): Int {
     val haystack = "$name $location".lowercase()
     return words.count { it in haystack }
+}
+
+/**
+ *  Returns the campsites that have not been filtered out by a User's selected filters.
+ *  No filters selected returns the list unchanged
+ *
+ *  note: distance and date functionality not implemented yet
+ */
+fun List<Campsite>.filterBy(filter: Filters): List<Campsite>{
+    var filteredList = mutableListOf<Campsite>()
+    for (site in this){     //probably not the most efficient for many sites
+        var notEnoughOccupancy = false
+        var matchingPreferences = true
+
+
+        //distance = deviceLocation - site.location -> then add (distance > filter.distanceFilter)
+
+        //val matchingDates = (Date(site.availability.first) > Date(filter.dates?.first)) &&
+        //        (Date(site.availability.second) < Date(filter.dates?.second))
+
+        if (filter.numGuests != 0){     //default value
+            notEnoughOccupancy = site.maxOccupancy < filter.numGuests!!
+        }
+        if (filter.preferences!!.isNotEmpty()){     //default value
+            matchingPreferences = filter.preferences.isNullOrEmpty() || site.geographicFeature.any {filter.preferences!!.contains(it)}
+        }
+
+        if (notEnoughOccupancy || !matchingPreferences ) {   //don't add site
+            continue
+        } else {
+            filteredList.add(site)
+        }
+    }
+    return filteredList
 }

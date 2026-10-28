@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,7 +29,9 @@ fun MainScreen(vm: CampsiteViewModel = viewModel()) {
     var isOwner by remember { mutableStateOf(true) }
     val message by vm.message.collectAsStateWithLifecycle()
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { isOwner = true }) { Text("Owner") }
             Button(onClick = { isOwner = false }) { Text("Entrant") }
@@ -70,49 +73,64 @@ private fun EntrantScreen(vm: CampsiteViewModel) {
     val allCampsites by vm.allCampsites.collectAsStateWithLifecycle()
     val query by vm.searchQuery.collectAsStateWithLifecycle()
     val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
-    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    var viewFilterScreen by remember { mutableStateOf(false) }
 
-    // Looked up in the full list, so typing in search can't close the details
-    // screen, and a deleted campsite simply returns you to the list.
-    val selected = allCampsites.firstOrNull { it.id == selectedId }
-    if (selected != null) {
-        CampsiteDetailsScreen(selected, onBack = { selectedId = null })
-        return
+    if (viewFilterScreen) {     // screen for an entrant's choice of filters
+        MakeFilterScreen(confirmFilters = { distanceFilter, dates, numGuests, preferences, turnOffFilterScreen ->
+            vm.setFilters(distanceFilter, dates, numGuests, preferences)
+            viewFilterScreen = turnOffFilterScreen  //last step: get rid of filter screen to refresh search
+        })
+
     }
+    else {                       // screen for an entrant's searched + filtered (if used) campsites
+        Button(onClick = {       //access Filter Campsites screen via toggle
+            viewFilterScreen = !viewFilterScreen
+        }) { Text("Select Filters") }
+        var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
 
-    LazyColumn {
-        item {
-            OutlinedTextField(
-                value = query,
-                onValueChange = vm::setSearchQuery,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search by name or location") },
-                singleLine = true
-            )
+        // Looked up in the full list, so typing in search can't close the details
+        // screen, and a deleted campsite simply returns you to the list.
+        val selected = allCampsites.firstOrNull { it.id == selectedId }
+        if (selected != null) {
+            CampsiteDetailsScreen(selected, onBack = { selectedId = null })
+            return
         }
 
-        item { Text("Campsites (Book = May 7 to 9, 2027, 2 guests)") }
+        LazyColumn {
+            item {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = vm::setSearchQuery,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search by name or location") },
+                    singleLine = true
+                )
+            }
 
-        if (campsites.isEmpty() && query.isNotBlank()) {
-            item { Text("No campsites match your search.") }
-        }
+            item { Text("Campsites (Book = May 7 to 9, 2027, 2 guests)") }
 
-        items(campsites, key = { it.id }) { campsite ->
-            CampsiteCard(
-                campsite,
-                Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                onClick = { selectedId = campsite.id },
-                trailing = {
-                    Button(onClick = { vm.book(campsite, "2027-05-07", "2027-05-09", 2) }) {
-                        Text("Book")
+            if (campsites.isEmpty() && query.isNotBlank()) {
+                item { Text("No campsites match your search.") }
+            }
+
+            items(campsites, key = { it.id }) { campsite ->
+                CampsiteCard(
+                    campsite,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    onClick = { selectedId = campsite.id },
+                    trailing = {
+                        Button(onClick = { vm.book(campsite, "2027-05-07", "2027-05-09", 2) }) {
+                            Text("Book")
+                        }
                     }
-                }
-            )
-        }
-
-        item { Text("My reservations") }
-        items(reservations, key = { it.id }) {
-            Text("${it.checkInDate} to ${it.checkOutDate} - ${it.numberOfGuests} guests")
+                )
+            }
+            item { Text("My reservations") }
+            items(reservations, key = { it.id }) {
+                Text("${it.checkInDate} to ${it.checkOutDate} - ${it.numberOfGuests} guests")
+            }
         }
     }
 }

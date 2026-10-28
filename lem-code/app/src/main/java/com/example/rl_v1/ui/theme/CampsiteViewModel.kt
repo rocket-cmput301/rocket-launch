@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.rl_v1.search.search
 import kotlinx.coroutines.flow.combine
+import com.example.rl_v1.search.filterBy
 
 /**
  * connects campsite screens to Firestore .
@@ -46,10 +47,14 @@ class CampsiteViewModel(
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
+    data class Filters(val distanceFilter: Int?=0, val dates: Pair<String, String>?=Pair("",""), val numGuests: Int?=0, val preferences: List<String>?=emptyList())
+    private val _filters = MutableStateFlow(Filters())
 
     /** all campsites narrowed by the search text. */
-    val searchedCampsites: StateFlow<List<Campsite>> =
-        combine(allCampsites, _searchQuery) { list, query -> list.search(query) }
+    var searchedCampsites: StateFlow<List<Campsite>> =
+        combine(allCampsites, _searchQuery, _filters){
+            list, query, filter -> list.search(query).filterBy(filter);
+        }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val ownerCampsites = campsiteRepo
@@ -64,6 +69,14 @@ class CampsiteViewModel(
         MutableStateFlow(emptyList())
 
     private var publishing = false
+    fun setFilters(distanceFilter: Int, dates: Pair<String, String>, numGuests: Int, preferences: List<String>) {
+        _filters.value = Filters(
+            distanceFilter = distanceFilter,        //needs to be connected to maps to determine device -> location device
+            dates = dates,                          //Pair("mm/dd/yyyy","mm/dd/yyyy")
+            numGuests = numGuests,
+            preferences = preferences               //corresponds to Campsite class' attribute 'geographicFeatures'
+        )
+    }
 
     /** publishes a listing owned by the current user. */
     fun publish(
