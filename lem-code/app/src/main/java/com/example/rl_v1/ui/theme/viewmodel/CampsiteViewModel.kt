@@ -6,7 +6,6 @@ import com.example.rl_v1.model.Campsite
 import com.example.rl_v1.model.Reservation
 import com.example.rl_v1.repository.CampsiteRepository
 import com.example.rl_v1.repository.FirestoreCampsiteRepository
-import com.example.rl_v1.search.filterBy
 import com.example.rl_v1.search.search
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CancellationException
@@ -18,9 +17,10 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.example.rl_v1.search.filterBy
 
 /**
- * connects campsite screens to Firestore .
+ * connects campsite screens to Firestore.
  * reservations and lottery eligibility are not implemented as of now
  */
 class CampsiteViewModel(
@@ -39,6 +39,11 @@ class CampsiteViewModel(
         .observeAllCampsites()
         .asState(emptyList())
 
+    val ownerCampsites = campsiteRepo
+        .observeCampsitesByOwner(userId)
+        .asState(emptyList())
+
+
     private val _searchQuery = MutableStateFlow("")
 
     /** the text currently in the search bar. */
@@ -47,20 +52,46 @@ class CampsiteViewModel(
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
-    data class Filters(val distanceFilter: Int?=0, val dates: Pair<String, String>?=Pair("",""), val numGuests: Int?=0, val preferences: List<String>?=emptyList())
-    private val _filters = MutableStateFlow(Filters())
 
     /** all campsites narrowed by the search text. */
-    var searchedCampsites: StateFlow<List<Campsite>> =
-        combine(allCampsites, _searchQuery, _filters) { list, query, filter ->
-            list.search(query).filterBy(filter);
-        }
+    val searchedCampsites: StateFlow<List<Campsite>> =
+        combine(allCampsites, _searchQuery) { list, query -> list.search(query) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val ownerCampsites = campsiteRepo
-        .observeCampsitesByOwner(userId)
-        .asState(emptyList())
+    data class Filters(
+        val distanceFilter: Int = 10,
+        val dates: Pair<String, String>? = null,
+        val numGuests: Int? = 0,
+        val preferences: List<String>? = emptyList()
+    )
 
+    private val _filters = MutableStateFlow(Filters())
+
+    /** the filters currently selected on the filter screen. */
+    val filters: StateFlow<Filters> = _filters
+
+    fun setFilters(filters: Filters) {
+        _filters.value = filters
+    }
+
+    fun setFilters(
+        distanceFilter: Int = 10,
+        dates: Pair<String, String>? = null,
+        numGuests: Int = 0,
+        preferences: List<String> = emptyList()
+    ) {
+        _filters.value = Filters(
+            distanceFilter = distanceFilter,
+            dates = dates,
+            numGuests = numGuests,
+            preferences = preferences
+        )
+    }
+
+    /** all campsites narrowed by search first, then by the selected filters. */
+    val filteredCampsites: StateFlow<List<Campsite>> =
+        combine(searchedCampsites, _filters) { list, f -> list.filterBy(f) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     // placeholders until reservations are connected to Firestore.
     val ownerReservations: StateFlow<List<Reservation>> =
         MutableStateFlow(emptyList())
@@ -69,21 +100,21 @@ class CampsiteViewModel(
         MutableStateFlow(emptyList())
 
     private var publishing = false
-    fun setFilters(distanceFilter: Int, dates: Pair<String, String>, numGuests: Int, preferences: List<String>) {
-        _filters.value = Filters(
-            distanceFilter = distanceFilter,        //needs to be connected to maps to determine device -> location device
-            dates = dates,                          //Pair("mm/dd/yyyy","mm/dd/yyyy")
-            numGuests = numGuests,
-            preferences = preferences               //corresponds to Campsite class' attribute 'geographicFeatures'
-        )
-    }
+    private var updating = false
 
     /** publishes a listing owned by the current user. */
     fun publish(
         name: String,
         location: String,
         maxOccupancy: Int,
-        pricePerNight: Double
+        pricePerNight: Double,
+        description: String = "",
+        amenities: List<String> = emptyList(),
+        latitude: Double? = null,
+        longitude: Double? = null,
+        imageUrl: String? = null,
+        rules: String = "",
+        cancellationPolicy: String = ""
     ) {
         if (publishing) return
 
@@ -98,7 +129,14 @@ class CampsiteViewModel(
                         name = name.trim(),
                         location = location.trim(),
                         maxOccupancy = maxOccupancy,
-                        pricePerNight = pricePerNight
+                        pricePerNight = pricePerNight,
+                        description = description.trim(),
+                        amenities = amenities.map { it.trim() }.filter { it.isNotEmpty() },
+                        latitude = latitude,
+                        longitude = longitude,
+                        imageUrl = imageUrl?.trim()?.ifEmpty { null },
+                        rules = rules.trim(),
+                        cancellationPolicy = cancellationPolicy.trim()
                     )
                 )
 
@@ -109,6 +147,28 @@ class CampsiteViewModel(
                 _message.value = "Could not publish: ${error.message}"
             } finally {
                 publishing = false
+            }
+        }
+    }
+
+    /** saves edits to one of the current user's campsites; [onDone] runs only on success. */
+    fun update(campsite: Campsite, onDone: () -> Unit = {}) {
+        if (updating) return
+
+        updating = true
+        _message.value = "Saving..."
+
+        viewModelScope.launch {
+            try {
+                campsiteRepo.updateCampsite(campsite, userId)
+                _message.value = "Saved ${campsite.name}"
+                onDone()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                _message.value = "Could not save: ${error.message}"
+            } finally {
+                updating = false
             }
         }
     }

@@ -1,6 +1,6 @@
 package com.example.rl_v1.search
 
-import com.example.rl_v1.ui.theme.CampsiteViewModel.Filters
+import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel.Filters
 import com.example.rl_v1.model.Campsite
 
 /**
@@ -33,7 +33,7 @@ private fun Campsite.matchCount(words: List<String>): Int {
  *  note: distance and date functionality not implemented yet
  */
 fun List<Campsite>.filterBy(filter: Filters): List<Campsite>{
-    var filteredList = mutableListOf<Campsite>()
+    val filteredList = mutableListOf<Campsite>()
     for (site in this){     //probably not the most efficient for many sites
         var notEnoughOccupancy = false
         var matchingPreferences = true
@@ -44,11 +44,14 @@ fun List<Campsite>.filterBy(filter: Filters): List<Campsite>{
         //val matchingDates = (Date(site.availability.first) > Date(filter.dates?.first)) &&
         //        (Date(site.availability.second) < Date(filter.dates?.second))
 
-        if (filter.numGuests != 0){     //default value
-            notEnoughOccupancy = site.maxOccupancy < filter.numGuests!!
+        val numGuests = filter.numGuests
+        if (numGuests != null && numGuests != 0){     //default value
+            notEnoughOccupancy = site.maxOccupancy < numGuests
         }
-        if (filter.preferences!!.isNotEmpty()){     //default value
-            matchingPreferences = filter.preferences.isNullOrEmpty() || site.geographicFeature.any {filter.preferences!!.contains(it)}
+
+        val preferences = filter.preferences
+        if (!preferences.isNullOrEmpty()){     //default value
+            matchingPreferences = site.geographicFeature.any { preferences.contains(it) }
         }
 
         if (notEnoughOccupancy || !matchingPreferences ) {   //don't add site

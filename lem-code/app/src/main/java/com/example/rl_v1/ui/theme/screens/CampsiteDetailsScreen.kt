@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -28,7 +29,11 @@ fun naIfBlank(text: String): String = text.ifBlank { "N/A" }
 
 /** Every detail we store about one campsite; missing ones show "N/A". */
 @Composable
-fun CampsiteDetailsScreen(campsite: Campsite, onBack: () -> Unit) {
+fun CampsiteDetailsScreen(
+    campsite: Campsite,
+    onBack: () -> Unit,
+    onEdit: (() -> Unit)? = null
+) {
     // The system back gesture returns to the list instead of closing the app.
     BackHandler(onBack = onBack)
 
@@ -44,6 +49,10 @@ fun CampsiteDetailsScreen(campsite: Campsite, onBack: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         TextButton(onClick = onBack) { Text("Back") }
+
+        if (onEdit != null) {
+            Button(onClick = onEdit) { Text("Edit campsite") }
+        }
 
         Text(
             naIfBlank(campsite.name),
@@ -109,3 +118,4 @@ private fun DetailSection(title: String, body: String) {
         Text(body)
     }
 }
+
