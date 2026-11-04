@@ -21,4 +21,11 @@ class FakeCampsiteRepository : CampsiteRepository {
 
     override fun observeCampsitesByOwner(ownerId: String): Flow<List<Campsite>> =
         FakeBackend.campsites.map { list -> list.filter { it.ownerId == ownerId } }
+
+    override suspend fun updateCampsite(        //added here as placeholder
+        campsite: Campsite,
+        ownerId: String
+    ) {
+        TODO("Not yet implemented")
+    }
 }
