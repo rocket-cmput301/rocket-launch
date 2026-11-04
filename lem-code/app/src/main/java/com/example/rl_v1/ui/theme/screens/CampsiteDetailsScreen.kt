@@ -61,7 +61,7 @@ fun CampsiteDetailsScreen(
 
         DetailSection("Location", naIfBlank(campsite.location))
 
-        DetailSection("Availability", naIfBlank("${campsite.availability.first} - ${campsite.availability.second}"))
+        DetailSection("Availability", naIfBlank("${campsite.availability?.startDate} - ${campsite.availability?.endDate}"))
         DetailSection(
             "Rating",
             if (campsite.ratingCount <= 0) "N/A"

@@ -3,6 +3,8 @@ package com.example.rl_v1.ui.theme.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rl_v1.model.Campsite
+import com.example.rl_v1.model.DateAvailability
+import com.example.rl_v1.model.Filters
 import com.example.rl_v1.model.Reservation
 import com.example.rl_v1.repository.CampsiteRepository
 import com.example.rl_v1.repository.FirestoreCampsiteRepository
@@ -57,14 +59,6 @@ class CampsiteViewModel(
     val searchedCampsites: StateFlow<List<Campsite>> =
         combine(allCampsites, _searchQuery) { list, query -> list.search(query) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    data class Filters(
-        val distanceFilter: Int = 10,
-        val dates: Pair<String, String>? = null,
-        val numGuests: Int? = 0,
-        val preferences: List<String>? = emptyList()
-    )
-
     private val _filters = MutableStateFlow(Filters())
 
     /** the filters currently selected on the filter screen. */
@@ -76,7 +70,7 @@ class CampsiteViewModel(
 
     fun setFilters(
         distanceFilter: Int = 10,
-        dates: Pair<String, String>? = null,
+        dates: DateAvailability? = null,
         numGuests: Int = 0,
         preferences: List<String> = emptyList()
     ) {

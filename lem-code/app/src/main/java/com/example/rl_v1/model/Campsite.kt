@@ -39,6 +39,6 @@ data class Campsite(
     val imageUrl: String? = null,
     val rules: String = "",
     val cancellationPolicy: String = "",
-    val availability: Pair<String, String> = Pair("",""), //written in mm/dd/yyyy, the date formatting is weird in Compose
+    val availability: DateAvailability? = null,         //see model.DateAvailability for details
     val geographicFeature: List<String> = emptyList()
 )
