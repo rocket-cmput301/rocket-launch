@@ -13,4 +13,7 @@ interface CampsiteRepository {
 
     //what the owner sees
     fun observeCampsitesByOwner(ownerId: String): Flow<List<Campsite>>
+
+    // fails if the campsite doesn't exist or isn't owned by ownerId
+    suspend fun updateCampsite(campsite: Campsite, ownerId: String)
 }
