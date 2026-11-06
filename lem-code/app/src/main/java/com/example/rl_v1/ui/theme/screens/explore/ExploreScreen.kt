@@ -45,11 +45,9 @@ fun ExploreScreen(onSwipeUp: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // SEARCH BAR
-                //temporary search bar
                 MapSearch(
                     title = "Where to?",
-                    subtitle = "DATE . GUESTS",
+                    subtitle = "DATE • GUESTS",
                     onClick = { /*TODO*/ },
                     modifier = Modifier.weight(1f)
                 )

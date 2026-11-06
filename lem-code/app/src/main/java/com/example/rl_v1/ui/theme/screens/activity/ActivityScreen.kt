@@ -3,16 +3,23 @@ package com.example.rl_v1.ui.theme.screens.activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
+import com.example.rl_v1.ui.theme.components.PrimaryClickableText
 import com.example.rl_v1.ui.theme.components.PrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
+import com.example.rl_v1.ui.theme.components.SecondaryTextBox
+import com.example.rl_v1.ui.theme.components.SmallButtonPrimary
+import com.example.rl_v1.ui.theme.theme.DarkGreen
 
 @Composable
 fun ActivityScreen(){
@@ -25,44 +32,59 @@ fun ActivityScreen(){
             ScreenHeader("Lottery Status")
         }
         item{
-            PrimaryTextBox(
-                value = "",
-                label = "Sample Camper",
-                Modifier.fillMaxSize(),
-                placeholder = "Device Linked Profile - No password needed\nChange profile photo"
-            )
+            Row(verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SmallButtonPrimary(text = "Lotteries", onClick = {})
+                SmallButtonPrimary(text = "Reservations", onClick = {})
+            }
+
         }
         item{
             PrimaryTextBox(
-                value = "",
-                label = "Personal Information",
+                value = "You can book now. Choose remaining dates by [DATE]",
+                label = "SELECTED • [CAMPSITE]",
                 Modifier.fillMaxSize(),
-                placeholder = "Name: Sample Camper\n" +
-                        "Email: camper@example.com\n" +
-                        "Phone: 123-456-7890"
+
+            )
+        }
+        item{
+            LargeButtonPrimary("Choose campsite & dates", onClick = { /*TODO*/ })
+        }
+        item{
+            PrimaryClickableText(
+                text = "Decline Opportunity",
+                textColor = DarkGreen,
+                onClick = { /*TODO*/ },
+                modifier = Modifier.fillMaxSize(),
 
             )
         }
         item{
             PrimaryTextBox(
-                value = "",
-                label = "Your Outdoor Preferences",
+                value = "Draw on [DATE]. You are on the waiting list",
+                label = "JOINED • [CAMPSITE]",
                 Modifier.fillMaxSize(),
-                placeholder = "Forest Hiking Lakeside\nPersonalizes featured campsites"
-
-            )
+            )}
+        item{
+            PrimaryClickableText(
+                text = "Leave waiting list",
+                textColor = DarkGreen,
+                onClick = { /*TODO*/ },
+                modifier = Modifier.fillMaxSize(),
+                )
         }
         item{
-            PrimaryTextBox(
-                value = "",
-                label = "Make it yours",
-                Modifier.fillMaxSize(),
-                placeholder = "Accessibility Settings >\nNotifications: On"
+            SecondaryTextBox(
+                value = "You were not selected in this draw. Explore other campsites",
+                label = "NOT SELECTED • [CAMPSITE]"
             )
-        }
-        item{
-            LargeButtonPrimary("Save Profile", onClick = { /*TODO*/ })
         }
 
     }
+}
+
+@Preview
+@Composable
+fun ActivityScreenPreview(){
+    ActivityScreen()
 }

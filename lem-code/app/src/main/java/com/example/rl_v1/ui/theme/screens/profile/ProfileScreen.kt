@@ -37,10 +37,10 @@ fun ProfileScreen(
         }
         item{
             PrimaryTextBox(
-                value = "",
+                value = "\"Device Linked Profile - No password needed\nChange profile photo",
                 label = "Sample Camper",
                 Modifier.fillMaxSize(),
-                placeholder = "Device Linked Profile - No password needed\nChange profile photo"
+
             )
         }
         item{
@@ -48,27 +48,24 @@ fun ProfileScreen(
                 value = "",
                 label = "Personal Information",
                 Modifier.fillMaxSize(),
-                placeholder = "Name: Sample Camper\n" +
-                        "Email: camper@example.com\n" +
-                        "Phone: 123-456-7890"
+
 
             )
         }
         item{
             PrimaryTextBox(
-                value = "",
+                value = "\"Forest Hiking Lakeside\\nPersonalizes featured campsites\"",
                 label = "Your Outdoor Preferences",
                 Modifier.fillMaxSize(),
-                placeholder = "Forest Hiking Lakeside\nPersonalizes featured campsites"
 
             )
         }
         item{
             PrimaryTextBox(
-                value = "",
+                value = "Accessibility Settings >\nNotifications: On",
                 label = "Make it yours",
                 Modifier.fillMaxSize(),
-                placeholder = "Accessibility Settings >\nNotifications: On"
+
             )
         }
         item{

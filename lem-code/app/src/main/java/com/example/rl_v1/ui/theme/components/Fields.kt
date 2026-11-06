@@ -35,7 +35,6 @@ fun PrimaryTextBox(
     value: String,
     label: String,
     modifier: Modifier = Modifier,
-    placeholder: String = "",
 ) {
     Column(
         modifier = modifier
@@ -59,11 +58,37 @@ fun PrimaryTextBox(
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray
         )
+    }
+
+}
+@Composable
+fun SecondaryTextBox(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Cream)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
         Text(
-            text = placeholder,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Forest
         )
+
+        Spacer(Modifier.height(4.dp))
+
+        if(value != "")
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
     }
 
 }

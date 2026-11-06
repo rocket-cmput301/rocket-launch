@@ -29,7 +29,7 @@ fun InboxScreen(){
                 value = "",
                 label = "Sample Camper",
                 Modifier.fillMaxSize(),
-                placeholder = "Device Linked Profile - No password needed\nChange profile photo"
+
             )
         }
         item{
@@ -37,9 +37,7 @@ fun InboxScreen(){
                 value = "",
                 label = "Personal Information",
                 Modifier.fillMaxSize(),
-                placeholder = "Name: Sample Camper\n" +
-                        "Email: camper@example.com\n" +
-                        "Phone: 123-456-7890"
+
 
             )
         }
@@ -48,7 +46,7 @@ fun InboxScreen(){
                 value = "",
                 label = "Your Outdoor Preferences",
                 Modifier.fillMaxSize(),
-                placeholder = "Forest Hiking Lakeside\nPersonalizes featured campsites"
+
 
             )
         }
@@ -57,7 +55,7 @@ fun InboxScreen(){
                 value = "",
                 label = "Make it yours",
                 Modifier.fillMaxSize(),
-                placeholder = "Accessibility Settings >\nNotifications: On"
+
             )
         }
         item{
