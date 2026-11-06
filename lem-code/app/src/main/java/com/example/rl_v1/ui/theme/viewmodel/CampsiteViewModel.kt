@@ -238,6 +238,19 @@ class CampsiteViewModel(
         }
     }
 
+    /** rejects a reservation on one of the current user's campsites. */
+    fun reject(reservation: Reservation) {
+        _message.value = "Rejecting..."
+        viewModelScope.launch {
+            val result = reservationRepo.reject(reservation.id, userId)
+            if (result.isSuccess) {
+                _message.value = "Reservation rejected"
+            } else {
+                _message.value = "Could not reject: ${result.exceptionOrNull()?.message}"
+            }
+        }
+    }
+
     /** clears the screens feedback message  */
     fun clearMessage() {
         _message.value = null

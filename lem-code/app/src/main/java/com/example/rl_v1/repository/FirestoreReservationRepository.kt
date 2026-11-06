@@ -1,6 +1,7 @@
 package com.example.rl_v1.repository
 
 import com.example.rl_v1.model.Reservation
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CancellationException
@@ -9,6 +10,20 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import kotlin.math.abs
+
+/**
+ * Checks whether [ownerId] is allowed to reject [reservation].
+ * Returns the error message to show, or null if the reservation can be rejected.
+ */
+fun rejectError(reservation: Reservation, ownerId: String): String? {
+    if (reservation.ownerId != ownerId) {
+        return "You can only reject reservations on your campsites"
+    }
+    if (reservation.status == "rejected") {
+        return "This reservation was already rejected"
+    }
+    return null
+}
 
 /**
  * Saves and observes reservations in Cloud Firestore.
@@ -94,6 +109,45 @@ class FirestoreReservationRepository(
         }.await()
 
         Result.success(reservation)
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: Exception) {
+        Result.failure(error)
+    }
+
+    override suspend fun reject(reservationId: String, ownerId: String): Result<Unit> = try {
+        firestore.runTransaction { transaction ->
+            val reservationRef = reservations.document(reservationId)
+            val reservation = transaction.get(reservationRef).toObject(Reservation::class.java)
+
+            if (reservation == null) {
+                throw IllegalStateException("This reservation no longer exists")
+            }
+            val error = rejectError(reservation, ownerId)
+            if (error != null) {
+                throw IllegalStateException(error)
+            }
+
+            val nights = stayNights(reservation.checkInDate, reservation.checkOutDate).getOrThrow()
+
+            // Find the booked nights that still belong to this reservation.
+            // All reads must happen before any writes in a transaction.
+            val nightsToFree = mutableListOf<DocumentReference>()
+            for (night in nights) {
+                val nightRef = bookedNights.document("${reservation.campsiteId}_$night")
+                val nightDoc = transaction.get(nightRef)
+                if (nightDoc.getString("reservationId") == reservationId) {
+                    nightsToFree.add(nightRef)
+                }
+            }
+
+            // Mark the reservation rejected and free its nights so they can be booked again.
+            transaction.update(reservationRef, "status", "rejected")
+            for (nightRef in nightsToFree) {
+                transaction.delete(nightRef)
+            }
+        }.await()
+        Result.success(Unit)
     } catch (error: CancellationException) {
         throw error
     } catch (error: Exception) {

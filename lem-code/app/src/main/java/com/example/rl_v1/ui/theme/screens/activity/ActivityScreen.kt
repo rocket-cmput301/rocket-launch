@@ -61,7 +61,7 @@ fun ActivityScreen(vm: CampsiteViewModel){
                     value = "${reservation.checkInDate} to ${reservation.checkOutDate} • " +
                             "${reservation.numberOfGuests} guests • $" +
                             String.format(Locale.US, "%.2f", reservation.totalPrice),
-                    label = "CONFIRMED • ${name.uppercase()}"
+                    label = "${reservation.status.uppercase()} • ${name.uppercase()}"
                 )
             }
         } else {
