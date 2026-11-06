@@ -25,4 +25,8 @@ interface ReservationRepository {
 
     //what the owner sees
     fun viewOwnerReservations(ownerId: String): Flow<List<Reservation>>
+
+    // owner rejects a booking on their campsite; frees its nights so they can be booked again
+    // suspend = function that has to wait on something slow
+    suspend fun reject(reservationId: String, ownerId: String): Result<Unit>
 }

@@ -20,8 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.rl_v1.ui.theme.MainScreen
-import com.example.rl_v1.ui.theme.Rlv1Theme
+import com.example.rl_v1.ui.theme.screens.TempMainScreen
+import com.example.rl_v1.ui.theme.theme.Rlv1Theme
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 if (signedIn) {
-                    MainScreen()
+                    TempMainScreen()
                 } else {
                     Column(
                         modifier = Modifier

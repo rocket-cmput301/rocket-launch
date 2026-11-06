@@ -1,4 +1,4 @@
-package com.example.rl_v1.ui.theme
+package com.example.rl_v1.ui.theme.screens.explore
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -15,8 +14,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.rl_v1.model.Campsite
+import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
+import com.example.rl_v1.ui.theme.components.priceText
+import com.example.rl_v1.ui.theme.components.ratingText
 import java.util.Locale
 
 /** Link that opens the location in any maps app or browser. */
@@ -32,7 +35,7 @@ fun naIfBlank(text: String): String = text.ifBlank { "N/A" }
 fun CampsiteDetailsScreen(
     campsite: Campsite,
     onBack: () -> Unit,
-    onEdit: (() -> Unit)? = null
+    onBook: (() -> Unit)? = null
 ) {
     // The system back gesture returns to the list instead of closing the app.
     BackHandler(onBack = onBack)
@@ -50,10 +53,6 @@ fun CampsiteDetailsScreen(
     ) {
         TextButton(onClick = onBack) { Text("Back") }
 
-        if (onEdit != null) {
-            Button(onClick = onEdit) { Text("Edit campsite") }
-        }
-
         Text(
             naIfBlank(campsite.name),
             style = MaterialTheme.typography.headlineSmall
@@ -61,7 +60,6 @@ fun CampsiteDetailsScreen(
 
         DetailSection("Location", naIfBlank(campsite.location))
 
-        DetailSection("Availability", naIfBlank("${campsite.availability.first} - ${campsite.availability.second}"))
         DetailSection(
             "Rating",
             if (campsite.ratingCount <= 0) "N/A"
@@ -102,11 +100,10 @@ fun CampsiteDetailsScreen(
 
         DetailSection("Rules", naIfBlank(campsite.rules))
         DetailSection("Cancellation policy", naIfBlank(campsite.cancellationPolicy))
-        var gFeatures: String = ""
-        for (feature in campsite.geographicFeature){
-            gFeatures += ("$feature, ")
+
+        if (onBook != null) {
+            LargeButtonPrimary("Choose dates", onClick = onBook)
         }
-        DetailSection("Geographic Features",naIfBlank(gFeatures))
     }
 }
 
@@ -118,4 +115,5 @@ private fun DetailSection(title: String, body: String) {
         Text(body)
     }
 }
+
 

@@ -5,7 +5,7 @@
  *  Doesn't have a corresponding test class because this isn't a class file, just a bunch of functions for providing a filter
  */
 
-package com.example.rl_v1.ui.theme
+package com.example.rl_v1.ui.theme.screens.explore
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
@@ -47,7 +48,7 @@ import java.util.Locale
 
 @Composable
 /**
- *  Displays a new filter screen for a User to browse campsites via filters and returns the selected filters to MainScreen
+ *  Displays a new filter screen for a User to browse campsites via filters and returns the selected filters through confirmFilters
  *
  *  @returns nothing
  */
@@ -178,17 +179,6 @@ public fun MakeFilterScreen(
                 contentColor = Color.White
             )
         ){ Text("Show Campsites")}      // original says: "Show 12 campsites" for campsites that filter properly, will have to come back to this
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            Button(
-                onClick = {
-                    selectedDistance = 10
-                    selectedDates = Pair("mm/dd/yyyy","mm/dd/yyyy")
-                    numGuests = 4
-                    selectedPreferences[0] = false; selectedPreferences[1] = false; selectedPreferences[2] = false
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = selectedChoiceColor, contentColor = Color.White)
-            ){Text("Reset Filters")}
-        }
     }
 }
 
@@ -295,3 +285,9 @@ fun DateRangePickerModal(
         )
     }
 }
+
+@Preview
+@Composable
+fun MakeFilterScreenPreview(){
+    MakeFilterScreen(confirmFilters = { distanceFilter, dates, numGuests, preferences, turnOffFilterScreen -> Unit
+})}
