@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -22,9 +24,14 @@ import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.components.PrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
 import com.example.rl_v1.ui.theme.components.SmallButtonPrimary
+import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import com.example.rl_v1.ui.theme.CampsiteCard
 
 @Composable
-fun CampsiteSelectScreen(onBack: () -> Unit){
+fun CampsiteSelectScreen(vm: CampsiteViewModel, onBack: () -> Unit, onCampsiteClick: (String) -> Unit){
+    val campsites by vm.filteredCampsites.collectAsStateWithLifecycle()
     Box(Modifier.fillMaxSize().background(Color.White)) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -37,13 +44,7 @@ fun CampsiteSelectScreen(onBack: () -> Unit){
             item{
                 Text("PLACE DATE GUESTS")
                 Spacer(Modifier.height(12.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SmallButtonPrimary("For you", onClick = {})
-                    SmallButtonPrimary("For you", onClick = {})
-                    SmallButtonPrimary("For you", onClick = {})
-                }
+
             }
             item{
                 Header1("Featured for You")
@@ -57,25 +58,17 @@ fun CampsiteSelectScreen(onBack: () -> Unit){
             item{
                 Header1(" Best Matches")
             }
-            item{
-                PrimaryTextBox(value = "Canmore, up to 6 guests", label = "01 PINE & Sky Camp")
+            items(campsites, key = { it.id }) { campsite ->
+                CampsiteCard(
+                    campsite,
+                    Modifier.fillMaxWidth(),
+                    onClick = { onCampsiteClick(campsite.id) }
+                )
             }
-            item{
-                PrimaryTextBox(value = "Canmore, up to 6 guests", label = "02 Bow Valley Retreat")
-            }
-            item{
+            item {
                 LargeButtonPrimary(text = "Explore map", onClick = onBack)
             }
-
         }
-
     }
-
-}
-
-@Preview
-@Composable
-fun CampsiteSelectPreview(){
-    CampsiteSelectScreen(onBack = {})
 }
 

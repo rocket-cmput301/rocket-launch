@@ -6,5 +6,6 @@ object Routes {
     const val CAMPSITE_DETAILS = "campsite_details"
     const val CAMPSITE_REGISTRATION = "campsite_registration"
     const val CONVERSATION = "conversation"
+    const val FILTERS = "filters"
     const val CAMPSITE_SELECT = "campsite_select"
 }

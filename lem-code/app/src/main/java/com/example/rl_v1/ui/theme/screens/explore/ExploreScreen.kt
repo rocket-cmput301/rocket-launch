@@ -23,10 +23,16 @@ import com.example.rl_v1.ui.theme.components.PrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
 import com.example.rl_v1.ui.theme.components.SmallButtonPrimary
 import com.example.rl_v1.ui.theme.components.SwipeUpPanel
+import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import com.example.rl_v1.ui.theme.components.AppInputTextField
 
 
 @Composable
-fun ExploreScreen(onSwipeUp: () -> Unit) {
+fun ExploreScreen(vm: CampsiteViewModel, onSwipeUp: () -> Unit, onOpenFilters: () -> Unit) {
+    val campsites by vm.filteredCampsites.collectAsStateWithLifecycle()
+    val query by vm.searchQuery.collectAsStateWithLifecycle()
     Box(Modifier.fillMaxSize().background(Color.White)) {
         // TODO: ADD MAP
 
@@ -43,11 +49,9 @@ fun ExploreScreen(onSwipeUp: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                MapSearch(
-                    title = "Where to?",
-                    subtitle = "DATE • GUESTS",
-                    onClick = { /*TODO*/ },
-                    modifier = Modifier.weight(1f)
+                AppInputTextField(
+                    value = query, onValueChange = vm::setSearchQuery,
+                    label = "Where to?", placeholder = "Name or Location"
                 )
 
                 SmallButtonPrimary("Filters", onClick = {})
@@ -87,22 +91,10 @@ fun ExploreScreen(onSwipeUp: () -> Unit) {
 
 
             SwipeUpPanel(
-                title = "12 campsites nearby",
+                title = "${campsites.size} campsites",
                 subtitle = "Swipe up for featured stays and best matches",
                 onSwipeUp = onSwipeUp,
                 )
         }
     }
 }
-
-
-@Preview
-@Composable
-fun ExploreScreenPreview(){
-    ExploreScreen(onSwipeUp = {})
-}
-
-
-
-
-
