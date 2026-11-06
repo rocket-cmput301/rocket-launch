@@ -14,7 +14,8 @@ service cloud.firestore {
           'maxOccupancy', 'pricePerNight',
           'rating', 'ratingCount', 'description', 'amenities',
           'latitude', 'longitude', 'imageUrl', 'rules',
-          'cancellationPolicy', 'geographicFeature'
+          'cancellationPolicy', 'geographicFeature',
+          'availableFrom', 'availableTo'
         ])
         && d.name is string
         && d.name.size() > 0
@@ -37,7 +38,9 @@ service cloud.firestore {
         && d.get('amenities', []) is list
         && d.get('amenities', []).size() <= 20
         && d.get('geographicFeature', []) is list
-        && d.get('imageUrl', null) == null || d.get('imageUrl', null) is string;
+        && d.get('availableFrom', '') is string
+        && d.get('availableTo', '') is string
+        && (d.get('imageUrl', null) == null || d.get('imageUrl', null) is string);
     }
 
     function validLocation(d) {
