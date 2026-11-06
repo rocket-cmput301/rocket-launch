@@ -2,12 +2,11 @@ package com.example.rl_v1.ui.theme.ViewModels.Owner
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.rl_v1.fake.FakeBackend
-import com.example.rl_v1.fake.FakeCampsiteRepository
-import com.example.rl_v1.fake.FakeReservationRepository
 import com.example.rl_v1.model.Campsite
 import com.example.rl_v1.repository.CampsiteRepository
+import com.example.rl_v1.repository.FirestoreCampsiteRepository
 import com.example.rl_v1.repository.ReservationRepository
+import com.google.firebase.auth.FirebaseAuth
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
@@ -19,17 +18,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class CampsiteOwnerViewModel(
-    private val campsiteRepo: CampsiteRepository = FakeCampsiteRepository(),
-    private val reservationRepo: ReservationRepository = FakeReservationRepository()
+    private val reservationRepo: ReservationRepository,
+    private val campsiteRepo: CampsiteRepository = FirestoreCampsiteRepository(),
+    // The owner and the entrant are the same signed-in user for now.
+    private val userId: String = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
 ) : ViewModel() {
 
-    private val ownerId = FakeBackend.OWNER_1
-    private val entrantId = FakeBackend.ENTRANT_1
-
     val allCampsites = campsiteRepo.observeAllCampsites().asState(emptyList())
-    val ownerCampsites = campsiteRepo.observeCampsitesByOwner(ownerId).asState(emptyList())
-    val ownerReservations = reservationRepo.viewOwnerReservations(ownerId).asState(emptyList())
-    val entrantReservations = reservationRepo.viewEntrantReservations(entrantId).asState(emptyList())
+    val ownerCampsites = campsiteRepo.observeCampsitesByOwner(userId).asState(emptyList())
+    val ownerReservations = reservationRepo.viewOwnerReservations(userId).asState(emptyList())
+    val entrantReservations = reservationRepo.viewEntrantReservations(userId).asState(emptyList())
 
     private val _message = MutableStateFlow<String?>(null)
 
@@ -38,16 +36,20 @@ class CampsiteOwnerViewModel(
 
     fun publish(name: String, location: String, maxOccupancy: Int, pricePerNight: Double) {
         viewModelScope.launch {
-            campsiteRepo.publishCampsite(
-                Campsite(
-                    ownerId = ownerId,
-                    name = name,
-                    location = location,
-                    maxOccupancy = maxOccupancy,
-                    pricePerNight = pricePerNight
+            try {
+                campsiteRepo.publishCampsite(
+                    Campsite(
+                        ownerId = userId,
+                        name = name,
+                        location = location,
+                        maxOccupancy = maxOccupancy,
+                        pricePerNight = pricePerNight
+                    )
                 )
-            )
-            _message.value = "Published $name"
+                _message.value = "Published $name"
+            } catch (e: Exception) {
+                _message.value = e.message ?: "Could not publish campsite"
+            }
         }
     }
 
@@ -58,21 +60,22 @@ class CampsiteOwnerViewModel(
             _message.value = "Dates must look like 2027-05-07"
             return
         }
+        if (nights <= 0) {
+            _message.value = "Check-out must be after check-in"
+            return
+        }
 
         viewModelScope.launch {
             val result = reservationRepo.book(
                 campsiteId = campsite.id,
-                entrantId = entrantId,
+                entrantId = userId,
                 checkInDate = checkIn,
                 checkOutDate = checkOut,
                 numberOfGuests = guests,
                 totalPrice = nights * campsite.pricePerNight
             )
             _message.value = result.fold(
-                onSuccess = {
-                    val total = "%.2f".format(it.totalPrice)
-                    "Booked, total $$total"
-                },
+                onSuccess = { "Booked, total $${"%.2f".format(it.totalPrice)}" },
                 onFailure = { it.message ?: "Booking failed" }
             )
         }
