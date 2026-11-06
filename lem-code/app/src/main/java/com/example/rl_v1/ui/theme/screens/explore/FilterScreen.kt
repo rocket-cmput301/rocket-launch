@@ -48,7 +48,7 @@ import java.util.Locale
 
 @Composable
 /**
- *  Displays a new filter screen for a User to browse campsites via filters and returns the selected filters to MainScreen
+ *  Displays a new filter screen for a User to browse campsites via filters and returns the selected filters through confirmFilters
  *
  *  @returns nothing
  */

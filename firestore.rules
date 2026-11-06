@@ -14,7 +14,8 @@ service cloud.firestore {
           'maxOccupancy', 'pricePerNight',
           'rating', 'ratingCount', 'description', 'amenities',
           'latitude', 'longitude', 'imageUrl', 'rules',
-          'cancellationPolicy', 'geographicFeature'
+          'cancellationPolicy', 'geographicFeature',
+          'availableFrom', 'availableTo'
         ])
         && d.name is string
         && d.name.size() > 0
@@ -37,7 +38,9 @@ service cloud.firestore {
         && d.get('amenities', []) is list
         && d.get('amenities', []).size() <= 20
         && d.get('geographicFeature', []) is list
-        && d.get('imageUrl', null) == null || d.get('imageUrl', null) is string;
+        && d.get('availableFrom', '') is string
+        && d.get('availableTo', '') is string
+        && (d.get('imageUrl', null) == null || d.get('imageUrl', null) is string);
     }
 
     function validLocation(d) {
@@ -70,6 +73,51 @@ service cloud.firestore {
 
       // change to `resource.data.ownerId == request.auth.uid` if you add owner delete
       allow delete: if false;
+    }
+
+    // Bookings. The entrant creates them; the entrant and the campsite owner can read them.
+    match /reservations/{reservationId} {
+      allow read: if request.auth != null
+        && (resource.data.entrantId == request.auth.uid
+            || resource.data.ownerId == request.auth.uid);
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll([
+             'id', 'campsiteId', 'ownerId', 'entrantId',
+             'checkInDate', 'checkOutDate', 'numberOfGuests', 'totalPrice'
+           ])
+        && request.resource.data.keys().hasOnly([
+             'id', 'campsiteId', 'ownerId', 'entrantId',
+             'checkInDate', 'checkOutDate', 'numberOfGuests', 'totalPrice'
+           ])
+        && request.resource.data.id == reservationId
+        && request.resource.data.entrantId == request.auth.uid
+        // ownerId must be the real owner of the campsite being booked
+        && request.resource.data.ownerId ==
+             get(/databases/$(database)/documents/campsites/$(request.resource.data.campsiteId)).data.ownerId
+        && request.resource.data.checkInDate is string
+        && request.resource.data.checkOutDate is string
+        && request.resource.data.checkInDate < request.resource.data.checkOutDate
+        && request.resource.data.numberOfGuests is int
+        && request.resource.data.numberOfGuests > 0
+        && request.resource.data.totalPrice is number
+        && request.resource.data.totalPrice >= 0;
+
+      // cancelling is not implemented yet
+      allow update, delete: if false;
+    }
+
+    // One document per booked night, id "{campsiteId}_{yyyy-MM-dd}".
+    // Create-only, so a night that is already taken can't be booked again.
+    match /bookedNights/{nightId} {
+      allow read: if request.auth != null;
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['campsiteId', 'reservationId', 'entrantId', 'date'])
+        && request.resource.data.entrantId == request.auth.uid
+        && nightId == request.resource.data.campsiteId + '_' + request.resource.data.date;
+
+      allow update, delete: if false;
     }
   }
 }

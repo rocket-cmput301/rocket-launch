@@ -18,6 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.rl_v1.ui.theme.components.Header1
 import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
+import com.example.rl_v1.ui.theme.components.LargeButtonSecondary
 import com.example.rl_v1.ui.theme.components.PrimaryClickableText
 import com.example.rl_v1.ui.theme.components.PrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
@@ -25,7 +26,8 @@ import com.example.rl_v1.ui.theme.theme.Forest
 
 @Composable
 fun ProfileScreen(
-
+    onPublishCampsite: () -> Unit = {},
+    onManageCampsites: () -> Unit = {}
 ){
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -34,6 +36,15 @@ fun ProfileScreen(
     ){
         item{
             ScreenHeader("Profile and Preferences")
+        }
+        item{
+            Header1("Hosting")
+        }
+        item{
+            LargeButtonPrimary("Publish a campsite", onClick = onPublishCampsite)
+        }
+        item{
+            LargeButtonSecondary("Manage my campsites", onClick = onManageCampsites)
         }
         item{
             PrimaryTextBox(

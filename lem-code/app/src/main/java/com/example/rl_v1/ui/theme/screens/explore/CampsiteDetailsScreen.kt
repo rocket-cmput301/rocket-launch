@@ -17,8 +17,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.rl_v1.model.Campsite
-import com.example.rl_v1.ui.theme.priceText
-import com.example.rl_v1.ui.theme.ratingText
+import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
+import com.example.rl_v1.ui.theme.components.priceText
+import com.example.rl_v1.ui.theme.components.ratingText
 import java.util.Locale
 
 /** Link that opens the location in any maps app or browser. */
@@ -31,7 +32,11 @@ fun naIfBlank(text: String): String = text.ifBlank { "N/A" }
 
 /** Every detail we store about one campsite; missing ones show "N/A". */
 @Composable
-fun CampsiteDetailsScreen(campsite: Campsite, onBack: () -> Unit) {
+fun CampsiteDetailsScreen(
+    campsite: Campsite,
+    onBack: () -> Unit,
+    onBook: (() -> Unit)? = null
+) {
     // The system back gesture returns to the list instead of closing the app.
     BackHandler(onBack = onBack)
 
@@ -95,6 +100,10 @@ fun CampsiteDetailsScreen(campsite: Campsite, onBack: () -> Unit) {
 
         DetailSection("Rules", naIfBlank(campsite.rules))
         DetailSection("Cancellation policy", naIfBlank(campsite.cancellationPolicy))
+
+        if (onBook != null) {
+            LargeButtonPrimary("Choose dates", onClick = onBook)
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-package com.example.rl_v1.ui.theme
+package com.example.rl_v1.ui.theme.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

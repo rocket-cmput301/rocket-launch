@@ -1,6 +1,5 @@
 package com.example.rl_v1.ui.theme.screens.explore
 
-import android.R.attr.text
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,7 +26,7 @@ import com.example.rl_v1.ui.theme.components.SmallButtonPrimary
 import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
-import com.example.rl_v1.ui.theme.CampsiteCard
+import com.example.rl_v1.ui.theme.components.CampsiteCard
 
 @Composable
 fun CampsiteSelectScreen(vm: CampsiteViewModel, onBack: () -> Unit, onCampsiteClick: (String) -> Unit){

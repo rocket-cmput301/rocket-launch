@@ -6,6 +6,9 @@ import com.example.rl_v1.model.Campsite
 import com.example.rl_v1.model.Reservation
 import com.example.rl_v1.repository.CampsiteRepository
 import com.example.rl_v1.repository.FirestoreCampsiteRepository
+import com.example.rl_v1.repository.FirestoreReservationRepository
+import com.example.rl_v1.repository.ReservationRepository
+import com.example.rl_v1.repository.stayNights
 import com.example.rl_v1.search.search
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CancellationException
@@ -20,11 +23,12 @@ import kotlinx.coroutines.launch
 import com.example.rl_v1.search.filterBy
 
 /**
- * connects campsite screens to Firestore.
- * reservations and lottery eligibility are not implemented as of now
+ * connects campsite and reservation screens to Firestore.
+ * lottery eligibility is not implemented as of now
  */
 class CampsiteViewModel(
     private val campsiteRepo: CampsiteRepository = FirestoreCampsiteRepository(),
+    private val reservationRepo: ReservationRepository = FirestoreReservationRepository(),
     private val userId: String = requireNotNull(
         FirebaseAuth.getInstance().currentUser?.uid
     ) { "sign in before creating CampsiteViewModel" }
@@ -92,15 +96,19 @@ class CampsiteViewModel(
     val filteredCampsites: StateFlow<List<Campsite>> =
         combine(searchedCampsites, _filters) { list, f -> list.filterBy(f) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    // placeholders until reservations are connected to Firestore.
-    val ownerReservations: StateFlow<List<Reservation>> =
-        MutableStateFlow(emptyList())
+    /** reservations other people made on the current user's campsites. */
+    val ownerReservations: StateFlow<List<Reservation>> = reservationRepo
+        .viewOwnerReservations(userId)
+        .asState(emptyList())
 
-    val entrantReservations: StateFlow<List<Reservation>> =
-        MutableStateFlow(emptyList())
+    /** reservations the current user made. */
+    val entrantReservations: StateFlow<List<Reservation>> = reservationRepo
+        .viewEntrantReservations(userId)
+        .asState(emptyList())
 
     private var publishing = false
     private var updating = false
+    private var booking = false
 
     /** publishes a listing owned by the current user. */
     fun publish(
@@ -114,7 +122,10 @@ class CampsiteViewModel(
         longitude: Double? = null,
         imageUrl: String? = null,
         rules: String = "",
-        cancellationPolicy: String = ""
+        cancellationPolicy: String = "",
+        availableFrom: String = "",
+        availableTo: String = "",
+        onDone: () -> Unit = {}
     ) {
         if (publishing) return
 
@@ -136,11 +147,14 @@ class CampsiteViewModel(
                         longitude = longitude,
                         imageUrl = imageUrl?.trim()?.ifEmpty { null },
                         rules = rules.trim(),
-                        cancellationPolicy = cancellationPolicy.trim()
+                        cancellationPolicy = cancellationPolicy.trim(),
+                        availableFrom = availableFrom.trim(),
+                        availableTo = availableTo.trim()
                     )
                 )
 
                 _message.value = "Published ${campsite.name}"
+                onDone()
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
@@ -173,15 +187,55 @@ class CampsiteViewModel(
         }
     }
 
-    /** booking is unavailable until its database support is implemented. */
-    @Suppress("UNUSED_PARAMETER")
+    /**
+     * books [campsite] for the current user. dates are ISO strings such as "2027-05-07".
+     * [onBooked] runs only when the reservation was saved.
+     */
     fun book(
         campsite: Campsite,
         checkIn: String,
         checkOut: String,
-        guests: Int
+        guests: Int,
+        onBooked: (Reservation) -> Unit = {}
     ) {
-        _message.value = "Reservations are not connected to Firebase yet."
+        if (booking) return
+
+        val nights = stayNights(checkIn, checkOut).getOrElse {
+            _message.value = it.message
+            return
+        }
+        if (guests < 1 || guests > campsite.maxOccupancy) {
+            _message.value = "Guests must be between 1 and ${campsite.maxOccupancy}"
+            return
+        }
+
+        booking = true
+        _message.value = "Booking..."
+
+        viewModelScope.launch {
+            try {
+                reservationRepo.book(
+                    campsiteId = campsite.id,
+                    entrantId = userId,
+                    checkInDate = checkIn,
+                    checkOutDate = checkOut,
+                    numberOfGuests = guests,
+                    totalPrice = nights.size * campsite.pricePerNight
+                ).fold(
+                    onSuccess = { reservation ->
+                        _message.value = null
+                        onBooked(reservation)
+                    },
+                    onFailure = { error ->
+                        _message.value = "Could not book: ${error.message}"
+                    }
+                )
+            } catch (error: CancellationException) {
+                throw error
+            } finally {
+                booking = false
+            }
+        }
     }
 
     /** clears the screens feedback message  */
