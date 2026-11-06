@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.example.rl_v1.ui.theme.theme.Forest
 import com.example.rl_v1.ui.theme.theme.GreyGreen
 
+/** Search box shown on the map, with a [title] and [subtitle]. [onClick] runs when tapped. */
 @Composable
 fun MapSearch(
     title: String,

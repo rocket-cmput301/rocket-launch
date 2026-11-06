@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 /** Reads and writes campsite reservations. */
 interface ReservationRepository {
 
-    //fails if the campsite is already booked or if it doesn't exist
+    /** Books a campsite for the given dates. Fails if the campsite doesn't exist or a night is already taken. */
     suspend fun book(
         campsiteId: String,
         entrantId: String,
@@ -20,13 +20,13 @@ interface ReservationRepository {
         totalPrice: Double
     ): Result<Reservation>
 
-    // what the entrant will see
+    /** Reservations made by [entrantId], updated live. */
     fun viewEntrantReservations(entrantId: String): Flow<List<Reservation>>
 
-    //what the owner sees
+    /** Reservations made on [ownerId]'s campsites, updated live. */
     fun viewOwnerReservations(ownerId: String): Flow<List<Reservation>>
 
-    // owner rejects a booking on their campsite; frees its nights so they can be booked again
     // suspend = function that has to wait on something slow
+    /** Rejects a reservation on one of [ownerId]'s campsites and frees its nights. */
     suspend fun reject(reservationId: String, ownerId: String): Result<Unit>
 }

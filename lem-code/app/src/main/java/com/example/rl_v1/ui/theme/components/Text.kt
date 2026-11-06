@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 
+/** Text that runs [onClick] when tapped, like a link. */
 @Composable
 fun PrimaryClickableText(
     text: String,

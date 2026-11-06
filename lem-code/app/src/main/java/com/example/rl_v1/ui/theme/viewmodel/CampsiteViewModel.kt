@@ -53,6 +53,7 @@ class CampsiteViewModel(
     /** the text currently in the search bar. */
     val searchQuery: StateFlow<String> = _searchQuery
 
+    /** Changes the search text, which updates [searchedCampsites]. */
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
@@ -62,6 +63,7 @@ class CampsiteViewModel(
         combine(allCampsites, _searchQuery) { list, query -> list.search(query) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** The filters chosen on the filter screen. The defaults mean no filter. */
     data class Filters(
         val distanceFilter: Int = 10,
         val dates: Pair<String, String>? = null,
@@ -74,10 +76,12 @@ class CampsiteViewModel(
     /** the filters currently selected on the filter screen. */
     val filters: StateFlow<Filters> = _filters
 
+    /** Replaces the current filters with [filters]. */
     fun setFilters(filters: Filters) {
         _filters.value = filters
     }
 
+    /** Replaces the current filters, using a default for anything not given. */
     fun setFilters(
         distanceFilter: Int = 10,
         dates: Pair<String, String>? = null,

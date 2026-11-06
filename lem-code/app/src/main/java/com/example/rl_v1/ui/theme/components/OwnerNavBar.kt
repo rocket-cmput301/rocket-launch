@@ -37,6 +37,7 @@ import com.example.rl_v1.ui.theme.theme.Cream
 import com.example.rl_v1.ui.theme.theme.DarkGreen
 import com.example.rl_v1.ui.theme.theme.GreyGreen
 
+/** The tabs of the owner bottom bar. Not used by the app yet. */
 enum class OwnerBottomTab(
     val label: String,
     val icon: ImageVector,
@@ -48,6 +49,7 @@ enum class OwnerBottomTab(
     Profile("Inbox", Icons.Outlined.PersonOutline)
 }
 
+/** Bottom bar with the owner tabs. [onTabSelected] runs when a tab is tapped. */
 @Composable
 fun AppBottomBar(
     selectedTab: OwnerBottomTab,
@@ -133,6 +135,7 @@ private fun OwnerBottomBarItem(
     }
 }
 
+/** Owner screen layout with the bottom bar. Not used by the app yet. */
 @Composable
 fun OwnerMainScaffold() {
     var selectedTab by rememberSaveable { mutableStateOf(BottomTab.Explore) }

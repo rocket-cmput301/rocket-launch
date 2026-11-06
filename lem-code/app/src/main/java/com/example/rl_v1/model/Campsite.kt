@@ -1,3 +1,5 @@
+package com.example.rl_v1.model
+
 /**
  * A campsite listing published by an owner.
  *
@@ -22,8 +24,6 @@
  * @property availableTo Last date the campsite can be reserved, written mm/dd/yyyy.
  * @property geographicFeatures Features near / around the Campsite
  */
-package com.example.rl_v1.model
-
 data class Campsite(
     val id: String = "",
     val ownerId: String = "",

@@ -26,6 +26,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
 
+/** Form for publishing a new campsite. [onDone] runs once it is published. */
 @Composable
 fun CampsiteRegistrationScreen(
     vm: CampsiteViewModel,
