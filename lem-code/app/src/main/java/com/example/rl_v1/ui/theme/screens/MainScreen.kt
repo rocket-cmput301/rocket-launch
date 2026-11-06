@@ -1,4 +1,4 @@
-package com.example.rl_v1.ui.theme
+package com.example.rl_v1.ui.theme.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -22,16 +24,43 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
-import com.example.rl_v1.ui.theme.screens.CampsiteEditScreen
+import com.example.rl_v1.ui.theme.CampsiteCard
+import com.example.rl_v1.ui.theme.CampsiteViewModel
+import com.example.rl_v1.ui.theme.components.AppBottomBar
+import com.example.rl_v1.ui.theme.components.BottomTab
+import com.example.rl_v1.ui.theme.screens.explore.CampsiteDetailsScreen
+import com.example.rl_v1.ui.theme.screens.explore.MakeFilterScreen
+import com.example.rl_v1.ui.theme.theme.Cream
 
-/** Simplest possible screen: a role toggle, buttons, and lists. */
+
 @Composable
 fun MainScreen(vm: CampsiteViewModel = viewModel()) {
+    var selectedTab by rememberSaveable { mutableStateOf(BottomTab.Explore) }
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Cream,
+        bottomBar = {
+            AppBottomBar(
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it }
+            )
+        }
+    ) { innerPadding ->
+        MainScreenContent(
+            modifier = Modifier.padding(innerPadding),
+            vm = vm
+        )
+
+    }
+}
+/** Simplest possible screen: a role toggle, buttons, and lists. */
+@Composable
+fun MainScreenContent( modifier: Modifier = Modifier, vm: CampsiteViewModel = viewModel()) {
     var isOwner by remember { mutableStateOf(true) }
     val message by vm.message.collectAsStateWithLifecycle()
 
-    Column(Modifier
+    Column(modifier
         .fillMaxSize()
         .padding(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
