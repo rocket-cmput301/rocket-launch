@@ -14,11 +14,13 @@ import com.example.rl_v1.ui.theme.screens.inbox.InboxScreen
 import com.example.rl_v1.ui.theme.screens.profile.ProfileScreen
 import com.example.rl_v1.ui.theme.components.BottomTab
 import com.example.rl_v1.ui.theme.screens.explore.CampsiteSelectScreen
+import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    vm: CampsiteViewModel
 ) {
     NavHost(
         navController = navController,
