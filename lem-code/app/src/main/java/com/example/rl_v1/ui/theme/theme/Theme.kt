@@ -34,6 +34,7 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+/** The app's colours and text styles. Wrap screens in this. */
 @Composable
 fun Rlv1Theme(
     darkTheme: Boolean = isSystemInDarkTheme(),

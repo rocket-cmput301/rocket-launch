@@ -20,6 +20,7 @@ import com.example.rl_v1.ui.theme.components.AppBottomBar
 import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
 import com.example.rl_v1.ui.theme.components.BottomTab
 
+/** Main app layout: the bottom tab bar and the current screen. */
 @Composable
 fun TempMainScreen() {
     val vm : CampsiteViewModel = viewModel()

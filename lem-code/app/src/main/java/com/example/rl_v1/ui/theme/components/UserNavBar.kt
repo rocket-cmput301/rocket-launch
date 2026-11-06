@@ -39,6 +39,7 @@ import com.example.rl_v1.ui.theme.theme.Cream
 import com.example.rl_v1.ui.theme.theme.DarkGreen
 import com.example.rl_v1.ui.theme.theme.GreyGreen
 
+/** The four tabs of the bottom bar. The name of each tab is also its screen route. */
 enum class BottomTab(
     val label: String,
     val icon: ImageVector,
@@ -50,6 +51,7 @@ enum class BottomTab(
     Profile("Profile", Icons.Outlined.PersonOutline)
 }
 
+/** Bottom bar with the four tabs. [selectedTab] is highlighted and [onTabSelected] runs when a tab is tapped. */
 @Composable
 fun AppBottomBar(
     selectedTab: BottomTab,
@@ -134,6 +136,7 @@ private fun BottomBarItem(
     }
 }
 
+/** Screen layout with the bottom bar. The app uses TempMainScreen instead. */
 @Composable
 fun MainScaffold() {
     var selectedTab by rememberSaveable { mutableStateOf(BottomTab.Explore) }

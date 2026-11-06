@@ -24,6 +24,7 @@ import com.example.rl_v1.ui.theme.components.PrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
 import com.example.rl_v1.ui.theme.theme.Forest
 
+/** Profile tab, with buttons to publish and manage campsites. Most profile settings are placeholders. */
 @Composable
 fun ProfileScreen(
     onPublishCampsite: () -> Unit = {},
