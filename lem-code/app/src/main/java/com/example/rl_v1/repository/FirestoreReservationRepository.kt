@@ -1,5 +1,6 @@
 package com.example.rl_v1.repository
 
+import com.example.rl_v1.model.DateAvailability
 import com.example.rl_v1.model.Reservation
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -45,13 +46,19 @@ class FirestoreReservationRepository(
             val ownerId = campsite.getString("ownerId").orEmpty()
             val maxOccupancy = campsite.getLong("maxOccupancy") ?: 0L
             val pricePerNight = campsite.getDouble("pricePerNight") ?: 0.0
-            val availableFrom = campsite.getString("availableFrom").orEmpty()
-            val availableTo = campsite.getString("availableTo").orEmpty()
+            val availabilityData = campsite.get("availability") as? Map<*, *>
+
+            val availability = availabilityData?.let {
+                DateAvailability(
+                    startDate = it["startDate"] as? String ?: "",
+                    endDate = it["endDate"] as? String ?: ""
+                )
+            }
 
             if (numberOfGuests < 1 || numberOfGuests > maxOccupancy) {
                 throw IllegalStateException("This campsite allows 1 to $maxOccupancy guests")
             }
-            if (!withinAvailability(nights, availableFrom, availableTo)) {
+            if (availability == null || !withinAvailability(nights, availability)) {
                 throw IllegalStateException("The campsite isn't available on those dates")
             }
             val expectedTotal = nights.size * pricePerNight

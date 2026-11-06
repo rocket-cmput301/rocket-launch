@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.rl_v1.model.DateAvailability
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.Year
@@ -53,14 +54,14 @@ import java.util.Locale
  *  @returns nothing
  */
 public fun MakeFilterScreen(
-    confirmFilters: (Int, Pair<String,String>, Int, ArrayList<String>, Boolean) -> Unit
+    confirmFilters: (Int, DateAvailability, Int, ArrayList<String>, Boolean) -> Unit
 ){
     val deviceLocation by remember {mutableStateOf("Canmore")}
     val formatter = SimpleDateFormat("MM/dd/yyyy",Locale.getDefault())
 
     //save these filters to get pushed up
     var selectedDistance by remember { mutableIntStateOf(10) }
-    var selectedDates by remember {mutableStateOf<Pair<String,String>>(Pair("mm/dd/yyyy", "mm/dd/yyyy"))}
+    var selectedDates by remember {mutableStateOf<DateAvailability>(DateAvailability())}
     var numGuests by remember {mutableIntStateOf(4)}
 
     var preferences = listOf<String>("Forest", "Hiking", "Lake")        //can add more if desired
@@ -72,7 +73,7 @@ public fun MakeFilterScreen(
     val activeFilterBooleans = remember { mutableStateListOf(false, false, false)}
 
     //may want to turn this into a LazyColumn if more filters are added
-    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.Start){
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.Start){
         Text(
             text = "Filter Campsites",
             fontSize = 20.sp,
@@ -101,8 +102,7 @@ public fun MakeFilterScreen(
         }
 
         MakeFilterSection("Stay date(s)",
-            subheader = if (daysBooked.toInt() != 1) "${selectedDates.first} - ${selectedDates.second}\n$daysBooked days" else "${selectedDates.first} - ${selectedDates.second}\n 1 day",
-            buttonAction = {
+            subheader = if (daysBooked.toInt() != 1) "${selectedDates.startDate} - ${selectedDates.endDate}\n$daysBooked days" else "${selectedDates.startDate} - ${selectedDates.startDate}\n 1 day",buttonAction = {
             activeFilterBooleans[1] = !activeFilterBooleans[1]
         })
         if (activeFilterBooleans[1]){
@@ -112,11 +112,13 @@ public fun MakeFilterScreen(
                     if (valid){
                         val difference = pair.second!! - pair.first!!
                         val milsInADay = 86400000
-                        daysBooked = difference / milsInADay   //millisecond calculation, 86400000 milliseconds in a day
-                        selectedDates = Pair(formatter.format(Date(pair.first!!+milsInADay)),formatter.format(Date(pair.second!!+milsInADay)))      //added an extra day because everything is off by 1 for some reason
+                        daysBooked = (difference / milsInADay)+1   //millisecond calculation, 86400000 milliseconds in a day
+                        selectedDates = DateAvailability(
+                            startDate = formatter.format(Date(pair.first!!+milsInADay)),
+                            endDate = formatter.format(Date(pair.second!!+milsInADay)))   //added extra day because they're off for some reason
                     }
                     else{
-                        selectedDates = Pair("Invalid Date Input","Invalid Date Input")
+                        selectedDates = DateAvailability(startDate = "Invalid Date Input", endDate = "Invalid Date Input")
                     }
                 },
                 onDismiss = {activeFilterBooleans[1] = false}
@@ -142,43 +144,59 @@ public fun MakeFilterScreen(
             }
         }
 
-        Text(
-            text = "Campsite Preferences",
-            fontSize = 16.sp,
-            color = Color.Black,
-            fontWeight = FontWeight.Bold
-        )
-        Row(modifier = Modifier.fillMaxWidth()){
-            for (pref in preferences){
+        Column(){
+            Text(
+                text = "Campsite Preferences",
+                fontSize = 16.sp,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            )
+            Row(modifier = Modifier.fillMaxWidth()){
+                for (pref in preferences){
+                    Button(
+                        onClick = {
+                            selectedPreferences[preferences.indexOf(pref)] = !selectedPreferences[preferences.indexOf(pref)]
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selectedPreferences[preferences.indexOf(pref)]) selectedChoiceColor else choiceColor,
+                            contentColor = if (selectedPreferences[preferences.indexOf(pref)]) Color.White else selectedChoiceColor
+                        ),
+                        contentPadding = PaddingValues(horizontal = 2.dp),
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    ){Text(pref, fontSize = 12.sp)}
+                }
+            }
+            //WOW Factor #2 goes here if we select it (Match Score according to User's preferences?)
+        }
+
+        Column(){
+            Button(
+                onClick = {
+                    var chosenPreferences = arrayListOf<String>()
+                    for (pref in preferences){
+                        if (selectedPreferences[preferences.indexOf(pref)]){ chosenPreferences.add(pref)}
+                    }
+                    confirmFilters(selectedDistance, selectedDates, numGuests, chosenPreferences,false)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = selectedChoiceColor,
+                    contentColor = Color.White
+                )
+            ){ Text("Show Campsites")}      // original says: "Show 12 campsites" for campsites that filter properly, will have to come back to this
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {       //reset button
                 Button(
                     onClick = {
-                        selectedPreferences[preferences.indexOf(pref)] = !selectedPreferences[preferences.indexOf(pref)]
+                        daysBooked = 0
+                        selectedDistance = 10
+                        selectedDates = DateAvailability()
+                        numGuests = 4
+                        selectedPreferences[0] = false; selectedPreferences[1] = false; selectedPreferences[2] = false
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (selectedPreferences[preferences.indexOf(pref)]) selectedChoiceColor else choiceColor,
-                        contentColor = if (selectedPreferences[preferences.indexOf(pref)]) Color.White else selectedChoiceColor
-                    ),
-                    contentPadding = PaddingValues(horizontal = 2.dp),
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                ){Text(pref, fontSize = 12.sp)}
+                    colors = ButtonDefaults.buttonColors(containerColor = selectedChoiceColor, contentColor = Color.White)
+                ){Text("Reset Filters")}
             }
         }
-        //WOW Factor #2 goes here if we select it (Match Score according to User's preferences?)
-
-        Button(
-            onClick = {
-                var chosenPreferences = arrayListOf<String>()
-                for (pref in preferences){
-                    if (selectedPreferences[preferences.indexOf(pref)]){ chosenPreferences.add(pref)}
-                }
-                confirmFilters(selectedDistance, selectedDates, numGuests, chosenPreferences,false)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = selectedChoiceColor,
-                contentColor = Color.White
-            )
-        ){ Text("Show Campsites")}      // original says: "Show 12 campsites" for campsites that filter properly, will have to come back to this
     }
 }
 
@@ -220,6 +238,7 @@ fun DateRangePickerModal(
     val todayDate = remember { LocalDate.now() }
     val todayYear = remember { Year.now().value }
     val dateRangePickerState = rememberDateRangePickerState(yearRange = IntRange(todayYear,todayYear+1))  //can only filter within 1 year of booking
+    var warningMsg by remember {mutableStateOf("Select date range")}
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
@@ -227,11 +246,18 @@ fun DateRangePickerModal(
             TextButton(
                 onClick = {
                     /** restrictions include:
-                     *  - can only book within 1 year (implemented)
+                     *  - can only book within 1 year in the future (implemented)
                      *  - can't pick dates that have passed (implemented)
                      *  - can't pick dates that don't exist (implemented)
-                     *  - must pick two dates, if booking for one day just pick the same day twice - can't fix for some reason?
+                     *  - must pick two dates, if booking for one day just pick the same day twice - now fixed
                      */
+                    val startDate = dateRangePickerState.selectedStartDateMillis
+                    val endDate = dateRangePickerState.selectedEndDateMillis
+
+                    if (startDate == null || endDate == null){
+                        warningMsg = "Please select two dates."
+                        return@TextButton
+                    } //only continue if it passes null check
 
                     val formatter = SimpleDateFormat("MM-dd-yyyy",Locale.getDefault())
                     val proposedDates = Pair(
@@ -239,9 +265,8 @@ fun DateRangePickerModal(
                         formatter.format(Date(dateRangePickerState.selectedEndDateMillis!!))
                     )
                     if (proposedDates.first.substring(0,2).toInt() < todayDate.monthValue ||
-                        proposedDates.first.substring(3,5).toInt()+1 < todayDate.dayOfMonth ||     //for some reason, first date is off by 1
-                        proposedDates.first == null ||
-                        proposedDates.second == null){  //applies above restrictions
+                        proposedDates.first.substring(3,5).toInt()+1 < todayDate.dayOfMonth     //for some reason, first date is off by 1
+                        ){  //applies above restrictions
                         onDateRangeSelected(
                             false,
                             Pair(null, null)
@@ -275,7 +300,7 @@ fun DateRangePickerModal(
             state = dateRangePickerState,
             title = {
                 Text(
-                    text = "Select date range"
+                    text = warningMsg
                 )
             },
             showModeToggle = false,
