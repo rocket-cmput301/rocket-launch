@@ -1,5 +1,6 @@
 package com.example.rl_v1.repository
 
+import com.example.rl_v1.model.DateAvailability
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
@@ -37,16 +38,15 @@ fun stayNights(checkIn: String, checkOut: String): Result<List<LocalDate>> {
 
 /**
  * True when every night falls inside the campsite's availability window.
- * A blank or unreadable [availableFrom] or [availableTo] means no limit on that side.
+ * A blank or unreadable [DateAvailability.startDate] or [DateAvailability.endDate] means no limit on that side
  */
 fun withinAvailability(
     nights: List<LocalDate>,
-    availableFrom: String,
-    availableTo: String
+    dates: DateAvailability,
 ): Boolean {
     if (nights.isEmpty()) return false
-    val from = parseDate(availableFrom)
-    val to = parseDate(availableTo)
+    val from = parseDate(dates.startDate)
+    val to = parseDate(dates.endDate)
     if (from != null && nights.first().isBefore(from)) return false
     if (to != null && nights.last().isAfter(to)) return false
     return true
