@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import com.example.rl_v1.ui.theme.components.AppInputTextField
 
 
+/** Explore tab: search bar, filters button and the swipe-up campsite panel. */
 @Composable
 fun ExploreScreen(vm: CampsiteViewModel, onSwipeUp: () -> Unit, onOpenFilters: () -> Unit) {
     val campsites by vm.filteredCampsites.collectAsStateWithLifecycle()

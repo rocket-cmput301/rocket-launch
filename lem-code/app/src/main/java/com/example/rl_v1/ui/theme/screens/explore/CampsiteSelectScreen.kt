@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import com.example.rl_v1.ui.theme.components.CampsiteCard
 
+/** List of campsites matching the search and filters. Tapping one runs [onCampsiteClick] with its id. */
 @Composable
 fun CampsiteSelectScreen(vm: CampsiteViewModel, onBack: () -> Unit, onCampsiteClick: (String) -> Unit){
     val campsites by vm.filteredCampsites.collectAsStateWithLifecycle()

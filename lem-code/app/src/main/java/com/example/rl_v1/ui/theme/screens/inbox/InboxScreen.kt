@@ -14,6 +14,7 @@ import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.components.PrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
 
+/** Inbox tab. Messaging is not built yet, so this is placeholder content. */
 @Composable
 fun InboxScreen(){
     LazyColumn(

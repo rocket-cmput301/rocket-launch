@@ -31,6 +31,7 @@ import com.example.rl_v1.ui.theme.theme.Cream
 import com.example.rl_v1.ui.theme.theme.Forest
 import com.example.rl_v1.ui.theme.theme.GreyGreen
 
+/** Panel at the bottom of the screen. Swiping it up by [swipeThreshold] runs [onSwipeUp]. */
 @Composable
 fun SwipeUpPanel(
     title: String,

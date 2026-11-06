@@ -30,6 +30,7 @@ import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
 
 private val idArgument = listOf(navArgument("id") { type = NavType.StringType })
 
+/** All the app's screens and how to move between them. Starts on the Explore tab. */
 @Composable
 fun AppNavHost(
     navController: NavHostController,

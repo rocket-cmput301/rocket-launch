@@ -43,6 +43,7 @@ data class CampsiteForm(
     }
 
     companion object {
+        /** Fills the form with the current values of [c]. */
         fun from(c: Campsite) = CampsiteForm(
             name = c.name,
             location = c.location,

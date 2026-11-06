@@ -30,6 +30,7 @@ import com.example.rl_v1.ui.theme.theme.Forest
 import com.example.rl_v1.ui.theme.theme.GreyGreen
 
 
+/** Light green box with a bold [label] and, if not empty, a grey [value] under it. */
 @Composable
 fun PrimaryTextBox(
     value: String,
@@ -61,6 +62,7 @@ fun PrimaryTextBox(
     }
 
 }
+/** Same as [PrimaryTextBox] but with a cream background. */
 @Composable
 fun SecondaryTextBox(
     value: String,
@@ -93,6 +95,7 @@ fun SecondaryTextBox(
 
 }
 
+/** Large cream box with a bold [label] and its [value] under it. */
 @Composable
 fun SecondaryTextField(
     label: String,
@@ -120,6 +123,7 @@ fun SecondaryTextField(
     }
 }
 
+/** Large light green box with a bold [label] and its [value] under it. */
 @Composable
 fun PrimaryTextField(
     label: String,
@@ -147,6 +151,7 @@ fun PrimaryTextField(
     }
 }
 
+/** Small light green box with a small [label] above a larger [value]. */
 @Composable
 fun AltTextField(
     label: String,
@@ -174,6 +179,7 @@ fun AltTextField(
     }
 }
 
+/** Text box the user can type in. Tapping anywhere in the box starts typing. */
 @Composable
 fun AppInputTextField(
     value: String,

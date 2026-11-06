@@ -56,6 +56,7 @@ class CampsiteViewModel(
     /** the text currently in the search bar. */
     val searchQuery: StateFlow<String> = _searchQuery
 
+    /** Changes the search text, which updates [searchedCampsites]. */
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
@@ -70,10 +71,12 @@ class CampsiteViewModel(
     /** the filters currently selected on the filter screen. */
     val filters: StateFlow<Filters> = _filters
 
+    /** Replaces the current filters with [filters]. */
     fun setFilters(filters: Filters) {
         _filters.value = filters
     }
 
+    /** Replaces the current filters, using a default for anything not given. */
     fun setFilters(
         distanceFilter: Int = 10,
         dates: DateAvailability? = null,
@@ -229,6 +232,19 @@ class CampsiteViewModel(
                 throw error
             } finally {
                 booking = false
+            }
+        }
+    }
+
+    /** rejects a reservation on one of the current user's campsites. */
+    fun reject(reservation: Reservation) {
+        _message.value = "Rejecting..."
+        viewModelScope.launch {
+            val result = reservationRepo.reject(reservation.id, userId)
+            if (result.isSuccess) {
+                _message.value = "Reservation rejected"
+            } else {
+                _message.value = "Could not reject: ${result.exceptionOrNull()?.message}"
             }
         }
     }
