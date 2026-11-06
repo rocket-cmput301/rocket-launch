@@ -41,6 +41,7 @@ dependencies {
     implementation("androidx.compose.animation:animation:1.12.1")
     implementation("androidx.compose.foundation:foundation-layout:1.12.1")
     implementation("androidx.compose.foundation:foundation:1.12.1")
+    implementation("androidx.compose.runtime:runtime:1.12.1")
     implementation("androidx.compose.ui:ui:1.12.1")
     implementation("androidx.navigation:navigation-compose:2.10.2")
     implementation("androidx.test.espresso:espresso-core:3.7.0")

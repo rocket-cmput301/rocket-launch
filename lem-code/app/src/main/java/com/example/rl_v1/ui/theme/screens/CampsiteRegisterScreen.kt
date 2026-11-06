@@ -5,25 +5,20 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rl_v1.ui.theme.CampsiteViewModel
 import androidx.compose.ui.platform.LocalInspectionMode
-import com.example.rl_v1.ui.theme.comp.AppInputTextField
-import com.example.rl_v1.ui.theme.comp.AppBottomBar
-import com.example.rl_v1.ui.theme.comp.ScreenHeader
-import com.example.rl_v1.ui.theme.comp.LargeButtonPrimary
-import com.example.rl_v1.ui.theme.comp.LargeButtonSecondary
-import com.example.rl_v1.ui.theme.comp.SelectableSmallButtonPrimary
+import com.example.rl_v1.ui.theme.components.AppInputTextField
+import com.example.rl_v1.ui.theme.components.ScreenHeader
+import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
+import com.example.rl_v1.ui.theme.components.SelectableSmallButtonPrimary
 
 
 @Composable
