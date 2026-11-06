@@ -25,7 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rl_v1.ui.theme.CampsiteCard
-import com.example.rl_v1.ui.theme.CampsiteViewModel
+import com.example.rl_v1.ui.theme.CampsiteDetailsScreen
+import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
 import com.example.rl_v1.ui.theme.components.AppBottomBar
 import com.example.rl_v1.ui.theme.components.BottomTab
 import com.example.rl_v1.ui.theme.screens.explore.CampsiteDetailsScreen
