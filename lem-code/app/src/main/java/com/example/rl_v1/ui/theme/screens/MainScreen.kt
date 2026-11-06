@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -76,6 +78,27 @@ fun MainScreenContent( modifier: Modifier = Modifier, vm: CampsiteViewModel = vi
 private fun OwnerScreen(vm: CampsiteViewModel) {
     val campsites by vm.ownerCampsites.collectAsStateWithLifecycle()
     val reservations by vm.ownerReservations.collectAsStateWithLifecycle()
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    var editing by rememberSaveable { mutableStateOf(false) }
+
+    // Looked up in the owner's list, so a deleted campsite drops you back to it.
+    val selected = campsites.firstOrNull { it.id == selectedId }
+    if (selected != null) {
+        if (editing) {
+            CampsiteEditScreen(
+                campsite = selected,
+                onSave = { edited -> vm.update(edited) { editing = false } },
+                onCancel = { editing = false }
+            )
+        } else {
+            CampsiteDetailsScreen(
+                selected,
+                onBack = { selectedId = null },
+                onEdit = { editing = true }
+            )
+        }
+        return
+    }
 
     LazyColumn {
         item {
@@ -84,9 +107,21 @@ private fun OwnerScreen(vm: CampsiteViewModel) {
             }) { Text("Publish a campsite") }
         }
 
-        item { Text("My campsites") }
-        items(campsites, key = { it.id }) {
-            Text("${it.name} - ${it.location} - $${it.pricePerNight}/night")
+        item { Text("My campsites", style = MaterialTheme.typography.titleMedium) }
+
+        if (campsites.isEmpty()) {
+            item { Text("You haven't published any campsites yet.") }
+        }
+
+        items(campsites, key = { it.id }) { campsite ->
+            CampsiteCard(
+                campsite,
+                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                onClick = {
+                    editing = false
+                    selectedId = campsite.id
+                }
+            )
         }
 
         item { Text("Bookings on my campsites") }
@@ -98,7 +133,7 @@ private fun OwnerScreen(vm: CampsiteViewModel) {
 
 @Composable
 private fun EntrantScreen(vm: CampsiteViewModel) {
-    val campsites by vm.searchedCampsites.collectAsStateWithLifecycle()
+    val campsites by vm.filteredCampsites.collectAsStateWithLifecycle()
     val allCampsites by vm.allCampsites.collectAsStateWithLifecycle()
     val query by vm.searchQuery.collectAsStateWithLifecycle()
     val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
@@ -106,11 +141,8 @@ private fun EntrantScreen(vm: CampsiteViewModel) {
 
     if (viewFilterScreen) {     // screen for an entrant's choice of filters
         MakeFilterScreen(confirmFilters = { distanceFilter, dates, numGuests, preferences, turnOffFilterScreen ->
-
-            //distanceFilter needs to be connected to maps to determine device -> location distance
-            //
-
-            viewFilterScreen = turnOffFilterScreen  //last step: get rid of filter screen
+            vm.setFilters(distanceFilter, dates, numGuests, preferences)
+            viewFilterScreen = turnOffFilterScreen  //last step: get rid of filter screen to refresh search
         })
 
     }
