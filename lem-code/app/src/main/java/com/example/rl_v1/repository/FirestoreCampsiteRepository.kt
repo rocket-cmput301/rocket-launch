@@ -60,7 +60,8 @@ class FirestoreCampsiteRepository(
                 "longitude" to campsite.longitude,
                 "imageUrl" to campsite.imageUrl,
                 "rules" to campsite.rules,
-                "cancellationPolicy" to campsite.cancellationPolicy
+                "cancellationPolicy" to campsite.cancellationPolicy,
+                "availability" to campsite.availability
             )
         ).await()
     }

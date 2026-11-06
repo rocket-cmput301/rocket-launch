@@ -1,9 +1,9 @@
 package com.example.rl_v1.search
 
 import com.example.rl_v1.model.Campsite
+import com.example.rl_v1.model.Filters
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel.Filters
 
 class CampsiteFilterTest {
 

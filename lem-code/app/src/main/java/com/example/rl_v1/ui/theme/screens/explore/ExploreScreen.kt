@@ -54,10 +54,10 @@ fun ExploreScreen(vm: CampsiteViewModel, onSwipeUp: () -> Unit, onOpenFilters: (
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 AppInputTextField(
+                    modifier = Modifier.weight(1f),
                     value = query, onValueChange = vm::setSearchQuery,
                     label = "Where to?", placeholder = "Name or Location"
                 )
-
                 SmallButtonPrimary("Filters", onClick = onOpenFilters)
             }
             Box(Modifier.fillMaxWidth()) {

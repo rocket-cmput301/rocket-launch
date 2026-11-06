@@ -1,7 +1,9 @@
 package com.example.rl_v1.search
 
-import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel.Filters
 import com.example.rl_v1.model.Campsite
+import com.example.rl_v1.model.Filters
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 /**
  * Returns the campsites whose name or location contains any word of [query].
@@ -37,12 +39,20 @@ fun List<Campsite>.filterBy(filter: Filters): List<Campsite>{
     for (site in this){     //probably not the most efficient for many sites
         var notEnoughOccupancy = false
         var matchingPreferences = true
+        var matchingDates = true
 
+        //if distance >=  deviceLocation - site.location -> then add (distance > filter.distanceFilter)
 
-        //distance = deviceLocation - site.location -> then add (distance > filter.distanceFilter)
-
-        //val matchingDates = (Date(site.availableFrom) > Date(filter.dates?.first)) &&
-        //        (Date(site.availableTo) < Date(filter.dates?.second))
+        val dates = filter.dates
+        if (dates != null && dates.startDate.isNotBlank() && dates.endDate.isNotBlank()){
+            val availability = site.availability ?: continue
+            val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+            val availableStart = LocalDate.parse(site.availability.startDate, formatter)
+            val availableEnd = LocalDate.parse(site.availability.endDate, formatter)
+            val requestedStart = LocalDate.parse(filter.dates.startDate, formatter)
+            val requestedEnd = LocalDate.parse(filter.dates.endDate, formatter)
+            matchingDates = (availableStart <= requestedStart) && (availableEnd >= requestedEnd)
+        }
 
         val numGuests = filter.numGuests
         if (numGuests != null && numGuests != 0){     //default value
@@ -54,7 +64,7 @@ fun List<Campsite>.filterBy(filter: Filters): List<Campsite>{
             matchingPreferences = site.geographicFeature.any { preferences.contains(it) }
         }
 
-        if (notEnoughOccupancy || !matchingPreferences ) {   //don't add site
+        if (notEnoughOccupancy || !matchingPreferences || !matchingDates) {   //don't add site
             continue
         } else {
             filteredList.add(site)
