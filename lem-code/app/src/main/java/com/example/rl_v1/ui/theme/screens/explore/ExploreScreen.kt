@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,6 +34,7 @@ import com.example.rl_v1.ui.theme.components.AppInputTextField
 fun ExploreScreen(vm: CampsiteViewModel, onSwipeUp: () -> Unit, onOpenFilters: () -> Unit) {
     val campsites by vm.filteredCampsites.collectAsStateWithLifecycle()
     val query by vm.searchQuery.collectAsStateWithLifecycle()
+    val message by vm.message.collectAsStateWithLifecycle()
     Box(Modifier.fillMaxSize().background(Color.White)) {
         // TODO: ADD MAP
 
@@ -45,6 +47,7 @@ fun ExploreScreen(vm: CampsiteViewModel, onSwipeUp: () -> Unit, onOpenFilters: (
             verticalArrangement = Arrangement.spacedBy(12.dp),
 
             ) {
+            message?.let { Text(it, color = Color.Red) }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -54,7 +57,7 @@ fun ExploreScreen(vm: CampsiteViewModel, onSwipeUp: () -> Unit, onOpenFilters: (
                     label = "Where to?", placeholder = "Name or Location"
                 )
 
-                SmallButtonPrimary("Filters", onClick = {})
+                SmallButtonPrimary("Filters", onClick = onOpenFilters)
             }
             Box(Modifier.fillMaxWidth()) {
                 SmallButtonPrimary(

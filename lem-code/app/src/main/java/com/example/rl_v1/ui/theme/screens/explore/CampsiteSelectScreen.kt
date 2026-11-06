@@ -32,6 +32,7 @@ import com.example.rl_v1.ui.theme.CampsiteCard
 @Composable
 fun CampsiteSelectScreen(vm: CampsiteViewModel, onBack: () -> Unit, onCampsiteClick: (String) -> Unit){
     val campsites by vm.filteredCampsites.collectAsStateWithLifecycle()
+    val message by vm.message.collectAsStateWithLifecycle()
     Box(Modifier.fillMaxSize().background(Color.White)) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -40,6 +41,9 @@ fun CampsiteSelectScreen(vm: CampsiteViewModel, onBack: () -> Unit, onCampsiteCl
         ) {
             item {
                 ScreenHeader("Select a Campsite")
+            }
+            message?.let { text ->
+                item { Text(text, color = Color.Red) }
             }
             item{
                 Text("PLACE DATE GUESTS")

@@ -41,8 +41,8 @@ fun List<Campsite>.filterBy(filter: Filters): List<Campsite>{
 
         //distance = deviceLocation - site.location -> then add (distance > filter.distanceFilter)
 
-        //val matchingDates = (Date(site.availability.first) > Date(filter.dates?.first)) &&
-        //        (Date(site.availability.second) < Date(filter.dates?.second))
+        //val matchingDates = (Date(site.availableFrom) > Date(filter.dates?.first)) &&
+        //        (Date(site.availableTo) < Date(filter.dates?.second))
 
         val numGuests = filter.numGuests
         if (numGuests != null && numGuests != 0){     //default value
