@@ -14,6 +14,7 @@ fun ScreenHeader(text: String){
     Text(text, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, color = Color.Black)
 }
 
+/** Section heading inside a screen, in forest green. */
 @Composable
 fun Header1(text: String){
     Text(text, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Forest)

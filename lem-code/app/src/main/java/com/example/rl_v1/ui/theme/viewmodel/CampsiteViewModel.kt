@@ -56,6 +56,7 @@ class CampsiteViewModel(
     /** the text currently in the search bar. */
     val searchQuery: StateFlow<String> = _searchQuery
 
+    /** Changes the search text, which updates [searchedCampsites]. */
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
@@ -65,15 +66,27 @@ class CampsiteViewModel(
         combine(allCampsites, _searchQuery) { list, query -> list.search(query) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** The filters chosen on the filter screen. The defaults mean no filter. */
+    /*
+    data class Filters(
+        val distanceFilter: Int = 10,
+        val dates: Pair<String, String>? = null,
+        val numGuests: Int? = 0,
+        val preferences: List<String>? = emptyList()
+    )*/
+
     private val _filters = MutableStateFlow(Filters())
 
     /** the filters currently selected on the filter screen. */
     val filters: StateFlow<Filters> = _filters
 
+    /** Replaces the current filters with [filters]. */
+    /*
     fun setFilters(filters: Filters) {
         _filters.value = filters
-    }
+    }*/
 
+    /** Replaces the current filters, using a default for anything not given. */
     fun setFilters(
         distanceFilter: Int = 10,
         dates: DateAvailability? = null,
@@ -229,6 +242,19 @@ class CampsiteViewModel(
                 throw error
             } finally {
                 booking = false
+            }
+        }
+    }
+
+    /** rejects a reservation on one of the current user's campsites. */
+    fun reject(reservation: Reservation) {
+        _message.value = "Rejecting..."
+        viewModelScope.launch {
+            val result = reservationRepo.reject(reservation.id, userId)
+            if (result.isSuccess) {
+                _message.value = "Reservation rejected"
+            } else {
+                _message.value = "Could not reject: ${result.exceptionOrNull()?.message}"
             }
         }
     }

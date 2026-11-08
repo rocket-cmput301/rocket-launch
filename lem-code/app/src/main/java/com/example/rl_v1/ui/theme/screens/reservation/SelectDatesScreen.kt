@@ -4,6 +4,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Checkbox
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -63,6 +66,7 @@ fun SelectDatesScreen(
         }
     )
     var guests by remember { mutableStateOf("1") }
+    var agreedToRules by remember { mutableStateOf(false) }
 
     val checkIn = pickerState.selectedStartDateMillis?.let(::toIsoDate)
     val checkOut = pickerState.selectedEndDateMillis?.let(::toIsoDate)
@@ -109,11 +113,23 @@ fun SelectDatesScreen(
         }
         PrimaryTextBox(value = summary, label = "YOUR RESERVATION • " + priceText(campsite.pricePerNight))
 
+        // Show the campsite's rules and policies so the entrant can read them before booking.
+        PrimaryTextBox(value = rulesToShow(campsite), label = "CAMPSITE RULES")
+        PrimaryTextBox(value = policyToShow(campsite), label = "CANCELLATION POLICY")
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = agreedToRules,
+                onCheckedChange = { agreedToRules = it }
+            )
+            Text("I have read and agree to the campsite rules and policies")
+        }
+
         message?.let { Text(it, color = Color.Red) }
 
         LargeButtonPrimary(
             text = "Confirm Reservation",
-            enabled = nights != null && guestsValid,
+            enabled = canConfirmReservation(nights != null, guestsValid, agreedToRules),
             onClick = {
                 if (checkIn != null && checkOut != null && guestCount != null) {
                     onConfirm(checkIn, checkOut, guestCount)
@@ -121,6 +137,27 @@ fun SelectDatesScreen(
             }
         )
     }
+}
+
+/** The campsite's rules, or a short note if the owner didn't write any. */
+fun rulesToShow(campsite: Campsite): String {
+    if (campsite.rules.isBlank()) {
+        return "This campsite has no extra rules."
+    }
+    return campsite.rules
+}
+
+/** The campsite's cancellation policy, or a short note if the owner didn't write one. */
+fun policyToShow(campsite: Campsite): String {
+    if (campsite.cancellationPolicy.isBlank()) {
+        return "This campsite has no cancellation policy."
+    }
+    return campsite.cancellationPolicy
+}
+
+/** The reservation can only be confirmed once the dates and guests are valid and the rules are agreed to. */
+fun canConfirmReservation(datesValid: Boolean, guestsValid: Boolean, agreedToRules: Boolean): Boolean {
+    return datesValid && guestsValid && agreedToRules
 }
 
 /** UTC midnight milliseconds from the picker to "2027-05-07". */

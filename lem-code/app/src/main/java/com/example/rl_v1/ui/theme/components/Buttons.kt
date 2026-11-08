@@ -118,6 +118,7 @@ fun SelectableSmallButtonPrimary(
     }
 }
 
+/** Small rounded button. Dark green when [dark] is true, white otherwise. */
 @Composable
 fun SmallButtonPrimary(
     text: String,

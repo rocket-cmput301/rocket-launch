@@ -1,6 +1,8 @@
 package com.example.rl_v1.ui.theme.screens.owner
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Column
+import com.example.rl_v1.ui.theme.components.SmallButtonPrimary
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -75,12 +77,22 @@ fun OwnerCampsitesScreen(
         items(reservations, key = { it.id }) { reservation ->
             val campsiteName = campsites.firstOrNull { it.id == reservation.campsiteId }?.name
                 ?: "Campsite"
-            PrimaryTextBox(
-                value = "${reservation.checkInDate} to ${reservation.checkOutDate} • " +
-                        "${reservation.numberOfGuests} guests • " +
-                        "$" + String.format(Locale.US, "%.2f", reservation.totalPrice),
-                label = campsiteName.uppercase()
-            )
+            val rejected = reservation.status == "rejected"
+            var label = campsiteName.uppercase()
+            if (rejected) {
+                label = "REJECTED • $label"
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                PrimaryTextBox(
+                    value = "${reservation.checkInDate} to ${reservation.checkOutDate} • " +
+                            "${reservation.numberOfGuests} guests • " +
+                            "$" + String.format(Locale.US, "%.2f", reservation.totalPrice),
+                    label = label
+                )
+                if (!rejected) {
+                    SmallButtonPrimary("Reject", onClick = { vm.reject(reservation) })
+                }
+            }
         }
     }
 }

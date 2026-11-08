@@ -1,5 +1,6 @@
 package com.example.rl_v1.navigation
 
+/** Names of the screens that aren't bottom tabs. Some need "/{id}" added to the end. */
 object Routes {
     const val SELECT_DATES = "select_dates"                 // + "/{id}" (campsite id)
     const val RESERVATION_CONFIRMED = "reservation_confirmed" // + "/{id}" (reservation id)

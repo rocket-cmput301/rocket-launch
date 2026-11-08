@@ -29,6 +29,7 @@ import com.example.rl_v1.ui.theme.theme.DarkGreen
 import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
 import java.util.Locale
 
+/** Activity tab: the user's reservations, and placeholder lottery cards. */
 @Composable
 fun ActivityScreen(vm: CampsiteViewModel){
     var showReservations by rememberSaveable { mutableStateOf(false) }
@@ -61,7 +62,7 @@ fun ActivityScreen(vm: CampsiteViewModel){
                     value = "${reservation.checkInDate} to ${reservation.checkOutDate} • " +
                             "${reservation.numberOfGuests} guests • $" +
                             String.format(Locale.US, "%.2f", reservation.totalPrice),
-                    label = "CONFIRMED • ${name.uppercase()}"
+                    label = "${reservation.status.uppercase()} • ${name.uppercase()}"
                 )
             }
         } else {
