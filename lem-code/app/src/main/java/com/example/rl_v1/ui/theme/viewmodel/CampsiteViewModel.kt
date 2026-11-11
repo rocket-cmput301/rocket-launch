@@ -5,11 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.rl_v1.model.Campsite
 import com.example.rl_v1.model.DateAvailability
 import com.example.rl_v1.model.Filters
+import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.model.Reservation
 import com.example.rl_v1.repository.CampsiteRepository
 import com.example.rl_v1.repository.FirestoreCampsiteRepository
 import com.example.rl_v1.repository.FirestoreReservationRepository
 import com.example.rl_v1.repository.ReservationRepository
+import com.example.rl_v1.repository.fakeLottery.FakeLotteryRepository
 import com.example.rl_v1.repository.stayNights
 import com.example.rl_v1.search.search
 import com.google.firebase.auth.FirebaseAuth
@@ -24,6 +26,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.rl_v1.search.filterBy
 import java.util.Date
+import kotlin.reflect.typeOf
 
 /**
  * connects campsite and reservation screens to Firestore.
@@ -32,6 +35,7 @@ import java.util.Date
 class CampsiteViewModel(
     private val campsiteRepo: CampsiteRepository = FirestoreCampsiteRepository(),
     private val reservationRepo: ReservationRepository = FirestoreReservationRepository(),
+    private val lotteryRepo: FakeLotteryRepository = FakeLotteryRepository(),
     private val userId: String = requireNotNull(
         FirebaseAuth.getInstance().currentUser?.uid
     ) { "sign in before creating CampsiteViewModel" }
@@ -66,25 +70,10 @@ class CampsiteViewModel(
         combine(allCampsites, _searchQuery) { list, query -> list.search(query) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** The filters chosen on the filter screen. The defaults mean no filter. */
-    /*
-    data class Filters(
-        val distanceFilter: Int = 10,
-        val dates: Pair<String, String>? = null,
-        val numGuests: Int? = 0,
-        val preferences: List<String>? = emptyList()
-    )*/
-
     private val _filters = MutableStateFlow(Filters())
 
     /** the filters currently selected on the filter screen. */
     val filters: StateFlow<Filters> = _filters
-
-    /** Replaces the current filters with [filters]. */
-    /*
-    fun setFilters(filters: Filters) {
-        _filters.value = filters
-    }*/
 
     /** Replaces the current filters, using a default for anything not given. */
     fun setFilters(
@@ -157,7 +146,9 @@ class CampsiteViewModel(
                         imageUrl = imageUrl?.trim()?.ifEmpty { null },
                         rules = rules.trim(),
                         cancellationPolicy = cancellationPolicy.trim(),
-                        availability = DateAvailability(startDate = availableFrom.trim(), endDate = availableTo.trim())
+                        availability = DateAvailability(startDate = availableFrom.trim(), endDate = availableTo.trim()),
+                        lottery = Lottery(registrationPeriod = DateAvailability(availableFrom.trim(), availableTo.trim()))  //test
+                        //lottery = Lottery()
                     )
                 )
 
@@ -273,4 +264,40 @@ class CampsiteViewModel(
             SharingStarted.WhileSubscribed(5_000),
             initial
         )
+
+    val existingLotteries = lotteryRepo.lotteries
+
+    var userJoinedLotteries = lotteryRepo.observeLotteriesByUser(userId = userId, type = "Joined").stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    //following 2 lottery variables not used in implementation yet
+    val userWonLotteries = lotteryRepo.observeLotteriesByUser(userId = userId, type = "Selected").stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val userLostLotteries = lotteryRepo.observeLotteriesByUser(userId = userId, type = "Not Selected").stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Calls the joinWaitlist function in the Lottery Repository*/
+    fun callJoin(campId: String) {
+        viewModelScope.launch {
+            val lotId = lotteryRepo.getLotteryId(campId)
+            if (lotId != null){
+                lotteryRepo.joinWaitlist(
+                    lotteryId = lotId,
+                    entrantId = userId
+                )
+            }
+        }
+    }
+
+    /** Calls the leaveWaitlist function in the Lottery Repository */
+    fun callLeave(campId: String){
+        //println("before: ${lotteryRepo.entries}")
+        viewModelScope.launch {
+            val lotId = lotteryRepo.getLotteryId(campId)
+            if (lotId != null){
+                lotteryRepo.leaveWaitlist(
+                    lotteryId = lotId,
+                    entrantId = userId
+                )
+            }
+        }
+        //println("after: ${lotteryRepo.entries}")
+    }
 }

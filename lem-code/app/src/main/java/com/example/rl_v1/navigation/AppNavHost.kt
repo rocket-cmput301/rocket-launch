@@ -77,7 +77,12 @@ fun AppNavHost(
                 CampsiteDetailsScreen(
                     campsite = campsite,
                     onBack = { navController.popBackStack() },
-                    onBook = { navController.navigate("${Routes.SELECT_DATES}/${campsite.id}") }
+                    onBook = { navController.navigate("${Routes.SELECT_DATES}/${campsite.id}") },
+                    onJoin = {
+                        vm.callJoin(campId = campsite.id)
+                        //navController.navigate(BottomTab.Activity.name)         // commented for now since a bug arises where 'Explore' in navbar doesn't work if this gets called
+                        //instead maybe just notify via popup? "Successfully Joined [name] lottery!"
+                    }
                 )
             }
         }
