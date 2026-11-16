@@ -1,7 +1,7 @@
 /**
  *  Fake Lottery Repository for testing lottery implementations, UI and hard coded back end
  *
- *  will be converted to a Firestore Compatible Repository after initial fake commit
+ *  MOSTLY DEPRECATED, KEEPING THE FILE IN ONE MORE COMMIT BUT WILL BE DELETED IN THE NEXT ONE
  *
  *  @property _lotteries A private hard-coded (for test purposes) Lottery document collection -- will eventually be replaced
  *  @property lotteries  A public dynamic container of the corresponding lottery collection
@@ -12,6 +12,7 @@
 
 package com.example.rl_v1.repository.fakeLottery
 
+import androidx.compose.runtime.currentComposer
 import com.example.rl_v1.model.DateAvailability
 import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.model.WaitlistEntry
@@ -29,18 +30,18 @@ class FakeLotteryRepository(
     private val _lotteries: MutableStateFlow<List<Lottery>> = MutableStateFlow<List<Lottery>>(
         listOf(
             Lottery(
-                id = "lot1",
+                id = "lot1",        //in the firestore, equivalent is: vyHBElcNMcQgwHHyG9SR
                 campsiteIds = mutableListOf<String>("7lHDTEmnngKp0vE3YU4p"),        //ff database for testing
-                registrationPeriod = DateAvailability("11/10/2026","11/12/2026"),
+                registrationPeriod = DateAvailability("11/10/2026","11/20/2026"),
                 bookingPeriod = DateAvailability("11/15/2026","11/16/2026"),
                 maxWinners = 4,
                 capacity = 10,
                 status = "OPEN"
             ),
             Lottery(
-                id = "lot2",
+                id = "lot2",        //in the firestore, equivalent is: Wps7d9zvV6BgCc3WCCUd
                 campsiteIds = mutableListOf<String>("HOz04ctjcI2qXgTlM89O"),        //'a' database for testing
-                registrationPeriod = DateAvailability("11/10/2026","11/12/2026"),
+                registrationPeriod = DateAvailability("11/10/2026","11/20/2026"),
                 bookingPeriod = DateAvailability("11/15/2026","11/16/2026"),
                 maxWinners = 5,
                 capacity = 12,
@@ -56,7 +57,7 @@ class FakeLotteryRepository(
     //private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()            //the real firebase link later
 
 ): LotteryRepository {
-    override suspend fun joinWaitlist(lotteryId: String, entrantId: String) {
+    override suspend fun joinWaitlist(lotteryId: String, entrantId: String): Unit {
         val chosenLottery = lotteries.value.find { it.id == lotteryId }                     //locate the lottery the User is joining
         if (chosenLottery?.updateAndCheckStatus() == true){                                 //if conditions are fulfilled: (capacity is not full AND current date within registration period) -> lottery is still open
             val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
@@ -70,10 +71,11 @@ class FakeLotteryRepository(
             _entries.update { currentEntries ->
                 currentEntries + newEntry
             }
+            println("successful add")       //should be a notification
         }
     }
 
-    override suspend fun leaveWaitlist(lotteryId: String, entrantId: String) {
+    override suspend fun leaveWaitlist(lotteryId: String, entrantId: String): Unit {
         _entries.update { currentEntries ->
             currentEntries.filterNot { entry ->                                 //remove the specified entry from entries list since we don't need to retain history
                 entry.lotteryId == lotteryId && entry.entrantId == entrantId    //locate the entry
@@ -81,7 +83,9 @@ class FakeLotteryRepository(
         }
     }
 
+
     override fun observeLotteriesByUser(userId: String, type: String): Flow<List<Lottery>> {
+
         return combine(_lotteries, _entries) { lotteries, entries ->
             when (type) {
                 "Selected" -> { //return a Flow List of Lotteries the User has won (been randomly selected in)
@@ -127,8 +131,20 @@ class FakeLotteryRepository(
         TODO("Not yet implemented")
     }
 
+    /**
+     *  Randomly select <= [lottery.maxWinners] winners in the lottery waitlist
+     *
+     *  Additionally calls a function to ensure Users are notified that they won the lottery
+     *
+     *  @returns an integer of how many winners were picked and notified
+     *
+     */
     override fun selectWinners(lotteryId: String): Int {
-        TODO("Not yet implemented")
+        val endedLottery = lotteries.value.find { it.id == lotteryId }                     //locate the lottery the User is joining
+
+
+
+        return 0
     }
 
     /* External Functions
@@ -143,6 +159,7 @@ class FakeLotteryRepository(
      *
      *  @returns Boolean : true if the lottery is still eligible to join false otherwise
      */
+
     fun Lottery.updateAndCheckStatus(): Boolean{
 
         //check capacity eligibility
@@ -158,6 +175,7 @@ class FakeLotteryRepository(
         val registrationEnd = LocalDate.parse(this.registrationPeriod.endDate, formatter)
         val currentDate = LocalDate.now()
         val todayEligible = (currentDate >= registrationStart) && (currentDate <= registrationEnd)
+        //println("${currentDate} and $registrationStart $registrationStart")
         if (!todayEligible){
             this.status = "CLOSED"
             return false

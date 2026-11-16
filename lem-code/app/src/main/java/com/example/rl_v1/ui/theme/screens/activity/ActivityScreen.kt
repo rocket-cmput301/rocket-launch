@@ -34,6 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import java.util.Locale
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /** Activity tab: the user's reservations, and placeholder lottery cards. */
 @Composable
@@ -41,9 +43,9 @@ fun ActivityScreen(vm: CampsiteViewModel){
     var showReservations by rememberSaveable { mutableStateOf(false) }
     val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
     val campsites by vm.allCampsites.collectAsStateWithLifecycle()
-    val joinedLotteries by vm.userJoinedLotteries.collectAsStateWithLifecycle()        //testing ui
-    //val selectedLotteries by vm.userWonLotteries.collectAsStateWithLifecycle()       //haven't been implemented yet
-    //val notSelectedLotteries by vm.userLostLotteries.collectAsStateWithLifecycle()   //haven't been implemented yet
+    val joinedLotteries by vm.userJoinedLotteries.collectAsStateWithLifecycle()
+    val selectedLotteries by vm.userWonLotteries.collectAsStateWithLifecycle()       //haven't been implemented yet
+    val notSelectedLotteries by vm.userLostLotteries.collectAsStateWithLifecycle()   //haven't been implemented yet
 
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -78,73 +80,78 @@ fun ActivityScreen(vm: CampsiteViewModel){
                 )
             }
         } else {        //showLotteries - currently placeholders still
-        item{
-            PrimaryTextBox(
-                value = "You can book now. Choose remaining dates by [DATE]",
-                label = "SELECTED • [CAMPSITE]",
-                Modifier.fillMaxSize(),
-
-            )
-        }
-        item{
-            LargeButtonPrimary("Choose campsite & dates", onClick = { /*TODO*/ })
-        }
-        item{
-            PrimaryClickableText(
-                text = "Decline Opportunity",
-                textColor = DarkGreen,
-                onClick = { /*TODO*/ },
-                modifier = Modifier.fillMaxSize(),
-
-            )
-        }
-        //disposed of placeholder -- still testing
-        if (joinedLotteries.isEmpty()){
             item {
-                Text("You are not in any Lottery Waitlists.")
-            }
-        }
-        else{
-            items(joinedLotteries, key = {it.id}) { lottery ->
-                val correspondingCampsite = campsites.filter{it.id in lottery.campsiteIds}  //uses filter because multiple campsites may be grouped
                 PrimaryTextBox(
-                    value = "Draw after ${lottery.registrationPeriod.endDate}",
-                    label = "JOINED • ${correspondingCampsite.joinToString { it.name }}"
-                )
-                PrimaryClickableText(                   //trying one text per WaitlistEntry first to ensure functionality
-                    text = "Leave waiting list",
-                    textColor = DarkGreen,
-                    onClick = {
+                    value = "You can book now. Choose remaining dates by [DATE]",
+                    label = "SELECTED • [CAMPSITE]",
+                    Modifier.fillMaxSize(),
 
-                        vm.callLeave(lottery.campsiteIds[0])    //remove first campsite, if its a list it removes it anyway due to filter in callLeave()
-                        //delete this item
-                    },
+                    )
+            }
+            item {
+                LargeButtonPrimary("Choose campsite & dates", onClick = { /*TODO*/ })   //US 01.04.02
+            }
+            item {
+                PrimaryClickableText(
+                    text = "Decline Opportunity",
+                    textColor = DarkGreen,
+                    onClick = { /*TODO*/ },                                                   //US 01.07.01
                     modifier = Modifier.fillMaxSize(),
+
+                    )
+            }
+            //disposed of placeholder -- still testing
+            if (joinedLotteries.isEmpty()) {
+                item {
+                    Text("You are not in any Lottery Waitlists.")
+                }
+            }
+            else {
+                items(joinedLotteries, key = { it.id }) { lottery ->
+                    var confirmPrompt by remember { mutableStateOf(false) }
+                    val correspondingCampsite =
+                        campsites.filter { it.id in lottery.campsiteIds }  //uses filter because multiple campsites may be grouped
+                    PrimaryTextBox(
+                        value = "Draw after ${lottery.registrationPeriod.endDate}",
+                        label = "JOINED • ${correspondingCampsite.joinToString { it.name }}"
+                    )
+
+                    if (confirmPrompt) {
+                        PrimaryClickableText(
+                            text = "Cancel Leave",
+                            textColor = DarkGreen,
+                            onClick = {
+                                confirmPrompt = false
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                        PrimaryClickableText(
+                            text = "Confirm Leave",
+                            textColor = DarkGreen,
+                            onClick = {
+                                vm.callLeaveLottery(lottery.campsiteIds[0])     //remove first campsite, if its a list it removes it anyway due to filter in callLeave()
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        PrimaryClickableText(
+                            text = "Leave waiting list",
+                            textColor = DarkGreen,
+                            onClick = {
+                                confirmPrompt = true    //confirm first
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
+            }
+            item {
+                SecondaryTextBox(
+                    value = "You were not selected in this draw. Explore other campsites",
+                    label = "NOT SELECTED • [CAMPSITE]"
                 )
             }
+
         }
-
-            /*
-        item{
-            PrimaryClickableText(
-                text = "Leave waiting list",
-                textColor = DarkGreen,
-                onClick = {
-                    //text is a toggle, then you pick which one you want removed
-
-                    //vm.callLeave(campId = campsite)
-                },
-                modifier = Modifier.fillMaxSize(),
-                )
-        }*/
-
-        item{
-            SecondaryTextBox(
-                value = "You were not selected in this draw. Explore other campsites",
-                label = "NOT SELECTED • [CAMPSITE]"
-            )
-        }
-        }
-
     }
 }

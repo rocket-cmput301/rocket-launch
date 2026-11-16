@@ -1,5 +1,6 @@
 package com.example.rl_v1.ui.theme.viewmodel
 
+import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rl_v1.model.Campsite
@@ -9,6 +10,7 @@ import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.model.Reservation
 import com.example.rl_v1.repository.CampsiteRepository
 import com.example.rl_v1.repository.FirestoreCampsiteRepository
+import com.example.rl_v1.repository.FirestoreLotteryRepository
 import com.example.rl_v1.repository.FirestoreReservationRepository
 import com.example.rl_v1.repository.ReservationRepository
 import com.example.rl_v1.repository.fakeLottery.FakeLotteryRepository
@@ -25,8 +27,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.rl_v1.search.filterBy
-import java.util.Date
-import kotlin.reflect.typeOf
 
 /**
  * connects campsite and reservation screens to Firestore.
@@ -35,7 +35,7 @@ import kotlin.reflect.typeOf
 class CampsiteViewModel(
     private val campsiteRepo: CampsiteRepository = FirestoreCampsiteRepository(),
     private val reservationRepo: ReservationRepository = FirestoreReservationRepository(),
-    private val lotteryRepo: FakeLotteryRepository = FakeLotteryRepository(),
+    private val lotteryRepo: FirestoreLotteryRepository = FirestoreLotteryRepository(),
     private val userId: String = requireNotNull(
         FirebaseAuth.getInstance().currentUser?.uid
     ) { "sign in before creating CampsiteViewModel" }
@@ -265,39 +265,30 @@ class CampsiteViewModel(
             initial
         )
 
-    val existingLotteries = lotteryRepo.lotteries
-
-    var userJoinedLotteries = lotteryRepo.observeLotteriesByUser(userId = userId, type = "Joined").stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    var userJoinedLotteries = lotteryRepo
+        .observeLotteriesByUser(userId = userId, type = "Joined")
+        .asState(emptyList())
 
     //following 2 lottery variables not used in implementation yet
-    val userWonLotteries = lotteryRepo.observeLotteriesByUser(userId = userId, type = "Selected").stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val userLostLotteries = lotteryRepo.observeLotteriesByUser(userId = userId, type = "Not Selected").stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    var userWonLotteries = lotteryRepo
+        .observeLotteriesByUser(userId = userId, type = "Selected")
+        .asState(emptyList())
+    var userLostLotteries = lotteryRepo
+        .observeLotteriesByUser(userId = userId, type = "Not Selected")
+        .asState(emptyList())
 
-    /** Calls the joinWaitlist function in the Lottery Repository*/
-    fun callJoin(campId: String) {
+    //LOTTERY JOIN/LEAVE Callers
+    fun callJoinLottery(campID: String){
         viewModelScope.launch {
-            val lotId = lotteryRepo.getLotteryId(campId)
-            if (lotId != null){
-                lotteryRepo.joinWaitlist(
-                    lotteryId = lotId,
-                    entrantId = userId
-                )
-            }
+            val lotID = lotteryRepo.getLotteryID(campID)          //find the lottery in 'lotteries' collection in Firestore based on campsite ID
+            lotteryRepo.joinWaitlist(lotteryId = lotID.toString(), entrantId = userId,)
         }
     }
 
-    /** Calls the leaveWaitlist function in the Lottery Repository */
-    fun callLeave(campId: String){
-        //println("before: ${lotteryRepo.entries}")
+    fun callLeaveLottery(campID: String): Unit{
         viewModelScope.launch {
-            val lotId = lotteryRepo.getLotteryId(campId)
-            if (lotId != null){
-                lotteryRepo.leaveWaitlist(
-                    lotteryId = lotId,
-                    entrantId = userId
-                )
-            }
+            val lotID = lotteryRepo.getLotteryID(campID)          //find the lottery in 'lotteries' collection in Firestore based on campsite ID
+            lotteryRepo.leaveWaitlist(lotteryId = lotID.toString(), entrantId = userId)
         }
-        //println("after: ${lotteryRepo.entries}")
     }
 }

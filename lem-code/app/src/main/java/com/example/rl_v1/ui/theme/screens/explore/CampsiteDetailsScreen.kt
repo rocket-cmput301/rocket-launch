@@ -24,6 +24,8 @@ import com.example.rl_v1.repository.fakeLottery.FakeLotteryRepository
 import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.components.priceText
 import com.example.rl_v1.ui.theme.components.ratingText
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /** Link that opens the location in any maps app or browser. */
@@ -49,7 +51,6 @@ fun CampsiteDetailsScreen(
     val latitude = campsite.latitude
     val longitude = campsite.longitude
     val waitlistButtonText by remember { mutableStateOf("Join Waiting List") }
-    var daysLeft = ""
 
     Column(
         Modifier
@@ -112,16 +113,11 @@ fun CampsiteDetailsScreen(
         DetailSection("Rules", naIfBlank(campsite.rules))
         DetailSection("Cancellation policy", naIfBlank(campsite.cancellationPolicy))
 
-
-         /*
-            original text: if (campsite.lottery?.registrationPeriod?.startDate != "" || campsite.lottery.registrationPeriod.endDate != "") "$waitlistButtonText ($daysLeft)" else "Waitlist Closed"
-            i want the 'join waitlist' button to say: "Join Waitlist (x Days left)"
-            and then the button disables if that threshold has passed already - thus the lottery is 'COMPLETED'
-         */
         LargeButtonPrimary(
-            text = waitlistButtonText,
+            //text = if (campsite.lottery?.status == "OPEN") waitlistButtonText else "Waitlist Closed",
+            text = "Join Waitlist",
             onClick = onJoin,       //US 01.01.06, go to activity > lotteries screen
-            //enabled = if (campsite.lottery?.registrationPeriod?.startDate != "" || campsite.lottery.registrationPeriod.endDate != "") true else false
+            //enabled = if (campsite.lottery?.status == "OPEN") true else false,
             enabled = true
         )
         if (onBook != null) {                                           //only possible if won lottery, may comment
