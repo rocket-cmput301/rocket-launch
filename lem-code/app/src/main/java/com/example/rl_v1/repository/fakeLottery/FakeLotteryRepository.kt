@@ -123,13 +123,17 @@ class FakeLotteryRepository(
         TODO("Not yet implemented")
     }
 
-    override fun observeWaitlistEntries(campsiteId: String, ownerId: String): Flow<Lottery> {
+    override fun observeWaitlistUsersByOwner(
+        campsiteId: String,
+        ownerId: String
+    ): Flow<Lottery> {
         TODO("Not yet implemented")
     }
 
-    override fun notifyWaitlistEntries(campsiteId: String, ownerId: String) {
+    override fun notifyWaitlistUsers(campsiteId: String, ownerId: String) {
         TODO("Not yet implemented")
     }
+
 
     /**
      *  Randomly select <= [lottery.maxWinners] winners in the lottery waitlist
