@@ -7,6 +7,7 @@
  *  @property joinedAt The date the User joined the waitlist
  *  @property status The current status of the entry (WAITING, TERMINATED)
  *      'WAITING' - This Entrant is currently in the waitlist just waiting for the lottery to be drawn
+ *      'WON' - This Waitlist Entry DID win the lottery
  *      'TERMINATED' - This Waitlist Entry did not win the lottery but is saved for history purposes
  */
 

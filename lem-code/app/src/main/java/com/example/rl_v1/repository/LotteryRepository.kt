@@ -31,7 +31,7 @@ interface LotteryRepository {
     fun notifyWaitlistUsers(campsiteId: String, ownerId: String): Unit
 
     /** Randomly selects a number of Users in a Lottery waitlist to categorize as lottery winners; lottery.maxWinners is the attribute to use to indicate limit */
-    fun selectWinners(lotteryId: String): Int
+    suspend fun selectWinners(lotteryId: String): Int
 
 
 }

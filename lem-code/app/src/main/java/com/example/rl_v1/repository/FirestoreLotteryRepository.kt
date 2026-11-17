@@ -15,6 +15,7 @@ import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.model.WaitlistEntry
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import com.google.type.DateTime
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.reflect.typeOf
 
 class FirestoreLotteryRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -53,7 +55,7 @@ class FirestoreLotteryRepository(
             }
             else{
                 waitlistEntries.add(newEntry)
-                // TODO: notify the user of successful join via UI: banner pop-up notification? or switch to Activity Screen?
+                // TODO: notify the user of successful join via UI: banner pop-up notification? or switch to Activity Screen? (US 01.03.01)
             }
 
         }
@@ -109,7 +111,15 @@ class FirestoreLotteryRepository(
         return combine(observeAllLotteries(), observeEntriesByUser(userId)) { lotteries, entries ->
             when (type) {
                 "Selected" -> { //TODO: return a Flow List of Lotteries the User has won (been randomly selected in) after Lottery Selection has been implemented
-                    emptyList()
+                    val openLotteries = lotteries.filter {it.status == "OPEN"}
+                    val userWonEntries = entries.filter {
+                        it.entrantId == userId &&
+                                it.lotteryId in openLotteries.map { lottery -> lottery.id } &&
+                                it.status == "WON"
+                    }
+                    userWonEntries.mapNotNull { entry ->
+                        openLotteries.find { it.id == entry.lotteryId }
+                    }
                 }
 
                 "Joined" -> {   //return a Flow List of Lotteries the User has Joined
@@ -126,7 +136,15 @@ class FirestoreLotteryRepository(
                     }
                 }
                 "Not Selected" -> { //TODO: return a Flow List of Lotteries the User has lost after Lottery Selection has been implemented
-                    emptyList()
+                    val openLotteries = lotteries.filter { it.status == "OPEN" }
+                    val userLostEntries = entries.filter {
+                        it.entrantId == userId &&
+                                it.lotteryId in openLotteries.map { lottery -> lottery.id } &&
+                                it.status == "TERMINATED"
+                    }
+                    userLostEntries.mapNotNull { entry ->
+                        openLotteries.find { it.id == entry.lotteryId }
+                    }
                 }
                 else -> emptyList()
             }
@@ -160,8 +178,31 @@ class FirestoreLotteryRepository(
         TODO("Not yet implemented")
     }
 
-    override fun selectWinners(lotteryId: String): Int {
-        TODO("Not yet implemented")
+    override suspend fun selectWinners(lotteryId: String): Int {
+        val chosenLottery = lotteries.document(lotteryId).get().await().toObject(Lottery::class.java)
+        val thisLotteryEntries = waitlistEntries                                                          //get a pool of all the WaitlistEntries for this lottery
+            .whereEqualTo("lotteryId", lotteryId)
+            .get()
+            .await()
+
+        val winners = thisLotteryEntries.shuffled().take(chosenLottery?.maxWinners!!)                //select the winners randomly
+        var usersGranted: Int = 0
+        for (winner in winners){
+            //winner.toObject(WaitlistEntry::class.java).status = "WON"
+            winner.reference.update("status", "WON").await()            //grant the corresponding winning User permission to make a reservation
+
+
+            val winningUserID = winner.toObject(WaitlistEntry::class.java).entrantId
+            //TODO: notify each winner of their lottery win (via notification? via inbox?)
+
+            //if User is successfully notified and granted permissions
+            usersGranted +=1
+            println("Updated ${winner.id} to WON")
+        }
+
+        //TODO: notify all other Users that they lost the lottery (US 01.03.02)
+
+        return usersGranted
     }
 
     /*
@@ -227,4 +268,43 @@ class FirestoreLotteryRepository(
             .await()
         return snapshot.documents.firstOrNull()?.id
     }
+
+    /**
+     *  Targets a User's WaitlistEntry for a lottery to decline the opportunity had they own the lottery
+     *
+     *  Called by ViewModel.callDeclineOp()
+     *
+     *  @returns nothing
+     */
+    suspend fun declineOpportunity(lotteryID: String, entrantID: String){
+        val chosenEntry = waitlistEntries                                                    //fetch the winning entry
+            .whereEqualTo("lotteryId", lotteryID)
+            .whereEqualTo("entrantId", entrantID)
+            .limit(1)
+            .get()
+            .await()
+        for (entry in chosenEntry.documents){                                               //for loop may not be the best way to do this but its the only way I know right now
+            if (entry.toObject(WaitlistEntry::class.java)?.status == "WON"){    //check if its a winning entry (it should be)
+                entry.reference.update("status","TERMINATED").await()       //only then, change it to terminated
+
+                //OPTIONALLY let the User provide a reason -- (US
+            }
+            else{
+                println("$entry is not a winning entry!")
+            }
+        }
+    }
+
+    /** DEV TEST FUNCTION: used to reset all Waitlist Entries; won't exist in the actual implementation */
+    suspend fun resetEntries(userID: String){
+        val toDelete = waitlistEntries
+            .whereEqualTo("entrantId", userID)
+            .get()
+            .await()
+        for (entry in toDelete.documents){
+            //println("WILL DELETE: $entry")
+            entry.reference.delete()
+        }
+    }
+
 }

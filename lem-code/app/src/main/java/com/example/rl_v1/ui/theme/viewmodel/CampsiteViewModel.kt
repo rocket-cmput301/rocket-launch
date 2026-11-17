@@ -1,6 +1,5 @@
 package com.example.rl_v1.ui.theme.viewmodel
 
-import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rl_v1.model.Campsite
@@ -13,7 +12,6 @@ import com.example.rl_v1.repository.FirestoreCampsiteRepository
 import com.example.rl_v1.repository.FirestoreLotteryRepository
 import com.example.rl_v1.repository.FirestoreReservationRepository
 import com.example.rl_v1.repository.ReservationRepository
-import com.example.rl_v1.repository.fakeLottery.FakeLotteryRepository
 import com.example.rl_v1.repository.stayNights
 import com.example.rl_v1.search.search
 import com.google.firebase.auth.FirebaseAuth
@@ -265,19 +263,19 @@ class CampsiteViewModel(
             initial
         )
 
+    //LOTTERY Observed Variables for UI
     var userJoinedLotteries = lotteryRepo
         .observeLotteriesByUser(userId = userId, type = "Joined")
         .asState(emptyList())
 
-    //following 2 lottery variables not used in implementation yet
-    var userWonLotteries = lotteryRepo
+    var userWonLotteries = lotteryRepo                                      //implementing currently
         .observeLotteriesByUser(userId = userId, type = "Selected")
         .asState(emptyList())
-    var userLostLotteries = lotteryRepo
+    var userLostLotteries = lotteryRepo                                     //not implemented yet
         .observeLotteriesByUser(userId = userId, type = "Not Selected")
         .asState(emptyList())
 
-    //LOTTERY JOIN/LEAVE Callers
+    //LOTTERY JOIN/LEAVE call functions
     fun callJoinLottery(campID: String){
         viewModelScope.launch {
             val lotID = lotteryRepo.getLotteryID(campID)          //find the lottery in 'lotteries' collection in Firestore based on campsite ID
@@ -289,6 +287,29 @@ class CampsiteViewModel(
         viewModelScope.launch {
             val lotID = lotteryRepo.getLotteryID(campID)          //find the lottery in 'lotteries' collection in Firestore based on campsite ID
             lotteryRepo.leaveWaitlist(lotteryId = lotID.toString(), entrantId = userId)
+        }
+    }
+
+    /** Called when Lottery is to select its winners ; called when a lottery's registration period ends */
+    fun callWinnerSelection(campID: String): Unit{
+        viewModelScope.launch {
+            val lotID = lotteryRepo.getLotteryID(campID = campID)
+            lotteryRepo.selectWinners(lotteryId = lotID.toString())
+        }
+    }
+
+    /** Called when User wishes to opt out of a Won Lottery (US 01.07.01) */
+    fun callDeclineOp(campID: String): Unit {
+        viewModelScope.launch {
+            val lotID = lotteryRepo.getLotteryID(campID)
+            lotteryRepo.declineOpportunity(lotID.toString(), userId)           //find the WaitlistEntry turn status to 'TERMINATED'
+        }
+    }
+
+    /** DEV TEST FUNCTION: used to reset all Waitlist Entries */
+    fun resetEntries(){
+        viewModelScope.launch {
+            lotteryRepo.resetEntries(userId)
         }
     }
 }

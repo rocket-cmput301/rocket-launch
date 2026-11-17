@@ -12,20 +12,13 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.rl_v1.model.Campsite
-import com.example.rl_v1.repository.fakeLottery.FakeLotteryRepository
 import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.components.priceText
 import com.example.rl_v1.ui.theme.components.ratingText
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /** Link that opens the location in any maps app or browser. */
@@ -50,7 +43,6 @@ fun CampsiteDetailsScreen(
     val uriHandler = LocalUriHandler.current
     val latitude = campsite.latitude
     val longitude = campsite.longitude
-    val waitlistButtonText by remember { mutableStateOf("Join Waiting List") }
 
     Column(
         Modifier
