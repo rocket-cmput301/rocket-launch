@@ -1,5 +1,6 @@
 package com.example.rl_v1.repository
 
+import com.example.rl_v1.model.DateAvailability
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,17 +33,17 @@ class ReservationDatesTest {
 
     @Test fun blankAvailabilityMeansNoLimit() {
         val nights = stayNights("2027-05-07", "2027-05-09").getOrThrow()
-        assertTrue(withinAvailability(nights, "", ""))
+        assertTrue(withinAvailability(nights, DateAvailability("", "")))
     }
 
     @Test fun stayInsideWindowIsAvailable() {
         val nights = stayNights("2027-05-07", "2027-05-09").getOrThrow()
-        assertTrue(withinAvailability(nights, "2027-05-01", "2027-05-08"))
+        assertTrue(withinAvailability(nights, DateAvailability("2027-05-01", "2027-05-08")))
     }
 
     @Test fun stayOutsideWindowIsUnavailable() {
         val nights = stayNights("2027-05-07", "2027-05-09").getOrThrow()
-        assertFalse(withinAvailability(nights, "2027-05-08", ""))
-        assertFalse(withinAvailability(nights, "", "2027-05-07"))
+        assertFalse(withinAvailability(nights, DateAvailability("2027-05-08", "")))
+        assertFalse(withinAvailability(nights, DateAvailability("", "2027-05-07")))
     }
 }

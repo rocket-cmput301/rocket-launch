@@ -3,6 +3,8 @@ package com.example.rl_v1.ui.theme.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rl_v1.model.Campsite
+import com.example.rl_v1.model.DateAvailability
+import com.example.rl_v1.model.Filters
 import com.example.rl_v1.model.Reservation
 import com.example.rl_v1.repository.CampsiteRepository
 import com.example.rl_v1.repository.FirestoreCampsiteRepository
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.rl_v1.search.filterBy
+import java.util.Date
 
 /**
  * connects campsite and reservation screens to Firestore.
@@ -63,14 +66,6 @@ class CampsiteViewModel(
         combine(allCampsites, _searchQuery) { list, query -> list.search(query) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** The filters chosen on the filter screen. The defaults mean no filter. */
-    data class Filters(
-        val distanceFilter: Int = 10,
-        val dates: Pair<String, String>? = null,
-        val numGuests: Int? = 0,
-        val preferences: List<String>? = emptyList()
-    )
-
     private val _filters = MutableStateFlow(Filters())
 
     /** the filters currently selected on the filter screen. */
@@ -84,7 +79,7 @@ class CampsiteViewModel(
     /** Replaces the current filters, using a default for anything not given. */
     fun setFilters(
         distanceFilter: Int = 10,
-        dates: Pair<String, String>? = null,
+        dates: DateAvailability? = null,
         numGuests: Int = 0,
         preferences: List<String> = emptyList()
     ) {
@@ -152,8 +147,7 @@ class CampsiteViewModel(
                         imageUrl = imageUrl?.trim()?.ifEmpty { null },
                         rules = rules.trim(),
                         cancellationPolicy = cancellationPolicy.trim(),
-                        availableFrom = availableFrom.trim(),
-                        availableTo = availableTo.trim()
+                        availability = DateAvailability(startDate = availableFrom.trim(), endDate = availableTo.trim())
                     )
                 )
 
