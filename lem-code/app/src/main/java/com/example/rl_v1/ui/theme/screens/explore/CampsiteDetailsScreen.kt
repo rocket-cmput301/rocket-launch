@@ -14,7 +14,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.rl_v1.model.Campsite
 import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
@@ -35,7 +34,8 @@ fun naIfBlank(text: String): String = text.ifBlank { "N/A" }
 fun CampsiteDetailsScreen(
     campsite: Campsite,
     onBack: () -> Unit,
-    onBook: (() -> Unit)? = null
+    onBook: (() -> Unit)? = null,
+    onJoin: () -> Unit
 ) {
     // The system back gesture returns to the list instead of closing the app.
     BackHandler(onBack = onBack)
@@ -98,11 +98,21 @@ fun CampsiteDetailsScreen(
                 Text("N/A")
             }
         }
+        var tags = ""
+        for (tag in campsite.geographicFeature){ tags += "${tag}, " }
+        DetailSection("Tags", naIfBlank(tags))
 
         DetailSection("Rules", naIfBlank(campsite.rules))
         DetailSection("Cancellation policy", naIfBlank(campsite.cancellationPolicy))
 
-        if (onBook != null) {
+        LargeButtonPrimary(
+            //text = if (campsite.lottery?.status == "OPEN") waitlistButtonText else "Waitlist Closed",
+            text = "Join Waitlist",
+            onClick = onJoin,       //US 01.01.06, go to activity > lotteries screen
+            //enabled = if (campsite.lottery?.status == "OPEN") true else false,
+            enabled = true
+        )
+        if (onBook != null) {                                           //only possible if won lottery, may comment
             LargeButtonPrimary("Choose dates", onClick = onBook)
         }
     }
