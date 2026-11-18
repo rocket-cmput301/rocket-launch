@@ -1,10 +1,15 @@
 package com.example.rl_v1.ui
 
 import com.example.rl_v1.model.Campsite
+import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.model.Reservation
+import com.example.rl_v1.model.WaitlistEntry
 import com.example.rl_v1.repository.CampsiteRepository
+import com.example.rl_v1.repository.FirestoreLotteryRepository
+import com.example.rl_v1.repository.LotteryRepository
 import com.example.rl_v1.repository.ReservationRepository
 import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
+import com.google.firebase.firestore.DocumentReference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -70,6 +75,66 @@ class FakeReservationRepository(reservations: List<Reservation>) : ReservationRe
     }
 }
 
+class FakeLotteryRepository: LotteryRepository{
+    override suspend fun joinWaitlist(lotteryId: String, entrantId: String) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun leaveWaitlist(lotteryId: String, entrantId: String) {
+        TODO("Not yet implemented")
+    }
+
+    override fun observeEntriesByUser(userId: String): Flow<List<WaitlistEntry>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun observeLotteriesByUser(
+        userId: String,
+        type: String
+    ): Flow<List<Lottery>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun observeAllLotteries(): Flow<List<Lottery>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun observeLotteriesByOwner(ownerId: String): Flow<List<Lottery>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun observeWaitlistUsersByOwner(
+        campsiteId: String,
+        ownerId: String
+    ): Flow<Lottery> {
+        TODO("Not yet implemented")
+    }
+
+    override fun notifyWaitlistUsers(campsiteId: String, ownerId: String) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun selectWinners(lotteryId: String): Int {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateAndCheckStatus(lotteryDocument: DocumentReference): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getLotteryID(campID: String): String? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun declineOpportunity(lotteryID: String, entrantID: String) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun resetEntries(userID: String) {
+        TODO("Not yet implemented")
+    }
+}
+
 /** Two campsites used by most of the UI tests. */
 val hintonPines = Campsite(
     id = "hinton",
@@ -106,7 +171,8 @@ val testReservation = Reservation(
 /** A view model that uses the fake repositories and a made up user id. */
 fun fakeViewModel(
     campsites: FakeCampsiteRepository = FakeCampsiteRepository(listOf(hintonPines, lakeView)),
-    reservations: FakeReservationRepository = FakeReservationRepository(emptyList())
+    reservations: FakeReservationRepository = FakeReservationRepository(emptyList()),
+    lotteries: FakeLotteryRepository = FakeLotteryRepository()
 ): CampsiteViewModel {
-    return CampsiteViewModel(campsites, reservations, "test-user")
+    return CampsiteViewModel(campsites, reservations, lotteries)
 }

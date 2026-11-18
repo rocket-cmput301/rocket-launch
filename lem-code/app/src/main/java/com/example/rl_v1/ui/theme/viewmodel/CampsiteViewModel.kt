@@ -11,6 +11,7 @@ import com.example.rl_v1.repository.CampsiteRepository
 import com.example.rl_v1.repository.FirestoreCampsiteRepository
 import com.example.rl_v1.repository.FirestoreLotteryRepository
 import com.example.rl_v1.repository.FirestoreReservationRepository
+import com.example.rl_v1.repository.LotteryRepository
 import com.example.rl_v1.repository.ReservationRepository
 import com.example.rl_v1.repository.stayNights
 import com.example.rl_v1.search.search
@@ -33,7 +34,7 @@ import com.example.rl_v1.search.filterBy
 class CampsiteViewModel(
     private val campsiteRepo: CampsiteRepository = FirestoreCampsiteRepository(),
     private val reservationRepo: ReservationRepository = FirestoreReservationRepository(),
-    private val lotteryRepo: FirestoreLotteryRepository = FirestoreLotteryRepository(),
+    private val lotteryRepo: LotteryRepository = FirestoreLotteryRepository(),
     private val userId: String = requireNotNull(
         FirebaseAuth.getInstance().currentUser?.uid
     ) { "sign in before creating CampsiteViewModel" }

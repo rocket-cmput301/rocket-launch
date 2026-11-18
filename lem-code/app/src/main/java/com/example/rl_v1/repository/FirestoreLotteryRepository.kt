@@ -87,11 +87,9 @@ class FirestoreLotteryRepository(
     /**
      *  Helper function for observeLotteriesByUser
      *
-     *  Not specified in LotteryRepository Interface
-     *
      *  @returns a Flow list of WaitlistEntries
      */
-    fun observeEntriesByUser(userId: String): Flow<List<WaitlistEntry>> = callbackFlow{
+    override fun observeEntriesByUser(userId: String): Flow<List<WaitlistEntry>> = callbackFlow{
         val query = waitlistEntries.whereEqualTo("entrantId", userId)
         val listener = query.addSnapshotListener { snapshot, error ->
             if (error != null){
@@ -209,17 +207,7 @@ class FirestoreLotteryRepository(
     EXTERNAL FUNCTIONS ----------
      */
 
-    /**
-     *  Extension function that updates a Lottery's status and returns a boolean on if it is still possible to join
-     *
-     *  Defined here in LotteryRepository to preserve Lottery as a data class
-     *  Currently checks eligibility by:
-     *      - lottery size has less than lottery capacity
-     *      - current date is within the registration period
-     *
-     *  @returns Boolean : true if the lottery is still eligible to join false otherwise
-     */
-    suspend fun updateAndCheckStatus(lotteryDocument: DocumentReference): Boolean{
+    override suspend fun updateAndCheckStatus(lotteryDocument: DocumentReference): Boolean{
         val entryCount = waitlistEntries
             .whereEqualTo("lotteryId",lotteryDocument.id)    //find matching lotteries
             .get()
@@ -253,14 +241,7 @@ class FirestoreLotteryRepository(
         return true
     }
 
-    /**
-     *  Searches the LotteryRepo Lottery list for a lottery that contains the given campID in its campsiteIds list
-     *
-     *  Called in CampsiteViewModel's callJoinLottery()
-     *
-     *  @returns the 'id' attribute of the specified Lottery Class
-     */
-    suspend fun getLotteryID(campID: String): String?{
+    override suspend fun getLotteryID(campID: String): String?{
         val snapshot = lotteries
             .whereArrayContains("campsiteIds", campID)
             .limit(1)
@@ -276,7 +257,7 @@ class FirestoreLotteryRepository(
      *
      *  @returns nothing
      */
-    suspend fun declineOpportunity(lotteryID: String, entrantID: String){
+    override suspend fun declineOpportunity(lotteryID: String, entrantID: String){
         val chosenEntry = waitlistEntries                                                    //fetch the winning entry
             .whereEqualTo("lotteryId", lotteryID)
             .whereEqualTo("entrantId", entrantID)
@@ -295,8 +276,7 @@ class FirestoreLotteryRepository(
         }
     }
 
-    /** DEV TEST FUNCTION: used to reset all Waitlist Entries; won't exist in the actual implementation */
-    suspend fun resetEntries(userID: String){
+    override suspend fun resetEntries(userID: String){
         val toDelete = waitlistEntries
             .whereEqualTo("entrantId", userID)
             .get()
