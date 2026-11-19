@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,10 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -239,4 +242,46 @@ fun AppInputTextField(
     }
 }
 
-
+/** Text box for a checklist of items; based on the above AppInputTextField */
+@Composable
+fun AppChecklistBox(
+    label: String,
+    items: List<String>,
+    selectedItems: Set<String>,
+    onSelectionChange: (Set<String>) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(LightGreen).padding(16.dp)){
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = Forest
+        )
+        Spacer(Modifier.height(8.dp))
+        items.forEach { item ->
+            Row(modifier = Modifier.fillMaxWidth().clickable {
+                val updated = selectedItems.toMutableSet()
+                if (item in updated) {
+                    updated.remove(item)
+                } else {
+                    updated.add(item)
+                }
+                onSelectionChange(updated)
+            }, verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(checked = item in selectedItems, onCheckedChange = { checked ->
+                    val updated = selectedItems.toMutableSet()
+                    if (checked) {
+                        updated.add(item)
+                    } else {
+                        updated.remove(item)
+                    }
+                    onSelectionChange(updated)
+                    }
+                )
+                Text(text = item, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    }
+}
