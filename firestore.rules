@@ -134,6 +134,10 @@ service cloud.firestore {
     // Lottery Rule
     match /lotteries/{lotteryId} {
       allow read: if request.auth != null;
+
+      allow create: if request.auth != null
+        && request.resource.data.id == lotteryId
+        && request.resource.data.ownerId == request.auth.uid;
     }
 
     //WaitlistEntry Rule

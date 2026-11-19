@@ -16,6 +16,7 @@ import androidx.navigation.navArgument
 import com.example.rl_v1.ui.theme.components.BottomTab
 import com.example.rl_v1.ui.theme.screens.CampsiteEditScreen
 import com.example.rl_v1.ui.theme.screens.CampsiteRegistrationScreen
+import com.example.rl_v1.ui.theme.screens.LotteryRegistrationScreen
 import com.example.rl_v1.ui.theme.screens.activity.ActivityScreen
 import com.example.rl_v1.ui.theme.screens.explore.CampsiteDetailsScreen
 import com.example.rl_v1.ui.theme.screens.explore.CampsiteSelectScreen
@@ -133,9 +134,19 @@ fun AppNavHost(
             CampsiteRegistrationScreen(
                 vm = vm,
                 onBack = { navController.popBackStack() },
+                onDone = { navController.popBackStack() },
+                onContinue = { navController.navigate(Routes.LOTTERY_REGISTER) }
+            )
+        }
+
+        composable(Routes.LOTTERY_REGISTER) {
+            LotteryRegistrationScreen(
+                vm = vm,
+                onBack = { navController.popBackStack() },
                 onDone = { navController.popBackStack() }
             )
         }
+
         composable(Routes.OWNER_CAMPSITES) {
             OwnerCampsitesScreen(
                 vm = vm,

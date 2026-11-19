@@ -80,6 +80,7 @@ fun ActivityScreen(vm: CampsiteViewModel){
             }
             else{
                 items(selectedLotteries, key = {it.id}) { lottery ->
+                    var confirmDecline by remember {mutableStateOf(false)}
                     val correspondingCampsite = campsites.filter { it.id in lottery.campsiteIds }
                     PrimaryTextBox(
                         value = "You can book now. Choose remaining dates by ${lottery.registrationPeriod.endDate}",
@@ -91,14 +92,28 @@ fun ActivityScreen(vm: CampsiteViewModel){
                         onClick = {
                             //TODO: prompt the same 'Select Dates' button from CampsiteDetailsScreen.kt (US 01.04.01 and US 01.04.02)
                         })
-                    PrimaryClickableText(
-                        text = "Decline Opportunity",
-                        textColor = DarkGreen,
-                        onClick = {
-                            vm.callDeclineOp(campID = lottery.campsiteIds[0])              //set status to 'TERMINATED' after a confirmation (US 01.04.03)
-                        },
-                        modifier = Modifier.fillMaxSize().padding(top = 8.dp),
-                    )
+                    if (confirmDecline){
+                        PrimaryClickableText(
+                            text = "Cancel Decline",
+                            textColor = DarkGreen,
+                            onClick = { confirmDecline = false },
+                            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        )
+                        PrimaryClickableText(
+                            text = "Confirm Decline",
+                            textColor = DarkGreen,
+                            onClick = { vm.callDeclineOp(campID = lottery.campsiteIds[0]) },              //set status to 'TERMINATED' after a confirmation (US 01.04.03)
+                            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        )
+                    }
+                    else{
+                        PrimaryClickableText(
+                            text = "Decline Opportunity",
+                            textColor = DarkGreen,
+                            onClick = { confirmDecline = true },
+                            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        )
+                    }
                 }
             }
 
