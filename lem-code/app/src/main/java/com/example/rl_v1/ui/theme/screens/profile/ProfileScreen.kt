@@ -10,7 +10,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
@@ -19,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.example.rl_v1.ui.theme.components.Header1
 import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.components.LargeButtonSecondary
+import com.example.rl_v1.ui.theme.components.PoliciesDialog
 import com.example.rl_v1.ui.theme.components.PrimaryClickableText
 import com.example.rl_v1.ui.theme.components.PrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
@@ -30,10 +36,17 @@ fun ProfileScreen(
     onPublishCampsite: () -> Unit = {},
     onManageCampsites: () -> Unit = {}
 ){
+    var showPolicies by rememberSaveable { mutableStateOf(false) }
+
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(16.dp),
-        modifier = Modifier.fillMaxSize().background(Color.White).padding(top = 16.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            // Blur the profile while the policies popup is open
+            .then(if (showPolicies) Modifier.blur(12.dp) else Modifier)
+            .padding(top = 16.dp)
     ){
         item{
             ScreenHeader("Profile and Preferences")
@@ -84,7 +97,7 @@ fun ProfileScreen(
             PrimaryClickableText(
                 text = "App Policies & Guidelines",
                 textColor = Forest,
-                onClick = { /*TODO*/ },
+                onClick = { showPolicies = true },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -104,7 +117,9 @@ fun ProfileScreen(
 
     }
 
-
+    if (showPolicies) {
+        PoliciesDialog(onDismiss = { showPolicies = false })
+    }
 }
 
 @Preview

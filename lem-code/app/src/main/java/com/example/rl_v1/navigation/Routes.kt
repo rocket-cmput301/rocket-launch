@@ -11,4 +11,6 @@ object Routes {
     const val CONVERSATION = "conversation"
     const val FILTERS = "filters"
     const val CAMPSITE_SELECT = "campsite_select"
+    const val LOGIN = "login"
+    const val SIGN_UP = "sign_up"
 }
