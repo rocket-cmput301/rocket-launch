@@ -56,7 +56,7 @@ fun ProfileScreen(
         }
         item{
             PrimaryTextBox(
-                value = "\"Device Linked Profile - No password needed\nChange profile photo",
+                value = "\"Device Linked Profile · No password needed\nChange profile photo",
                 label = "Sample Camper",
                 Modifier.fillMaxSize(),
 

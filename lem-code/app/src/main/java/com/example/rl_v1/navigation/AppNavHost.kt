@@ -77,7 +77,11 @@ fun AppNavHost(
                 CampsiteDetailsScreen(
                     campsite = campsite,
                     onBack = { navController.popBackStack() },
-                    onBook = { navController.navigate("${Routes.SELECT_DATES}/${campsite.id}") }
+                    onBook = { navController.navigate("${Routes.SELECT_DATES}/${campsite.id}") },
+                    onJoin = {
+                        vm.callJoinLottery(campID = campsite.id)    //the Real Lottery Repo
+                        //navController.navigate(BottomTab.Activity.name)         // commented for now since a bug arises where 'Explore' in navbar doesn't work if this gets called
+                    }
                 )
             }
         }

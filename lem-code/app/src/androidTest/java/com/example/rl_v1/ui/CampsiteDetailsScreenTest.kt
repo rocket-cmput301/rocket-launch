@@ -16,7 +16,7 @@ class CampsiteDetailsScreenTest {
     val composeRule = createComposeRule()
 
     @Test fun showsNameAndLocation() {
-        composeRule.setContent { CampsiteDetailsScreen(hintonPines, onBack = {}) }
+        composeRule.setContent { CampsiteDetailsScreen(hintonPines, onBack = {}, onJoin = {}) }
 
         composeRule.onNodeWithText("Hinton Pines").assertIsDisplayed()
         composeRule.onNodeWithText("Hinton, AB").assertIsDisplayed()
@@ -25,7 +25,7 @@ class CampsiteDetailsScreenTest {
     @Test fun chooseDatesButtonWorks() {
         var booked = false
         composeRule.setContent {
-            CampsiteDetailsScreen(hintonPines, onBack = {}, onBook = { booked = true })
+            CampsiteDetailsScreen(hintonPines, onBack = {}, onJoin = {}, onBook = { booked = true })
         }
 
         composeRule.onNodeWithText("Choose dates").performScrollTo().performClick()

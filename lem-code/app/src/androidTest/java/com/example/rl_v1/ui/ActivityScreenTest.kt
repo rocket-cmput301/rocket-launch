@@ -25,4 +25,12 @@ class ActivityScreenTest {
         }
         composeRule.onNodeWithText("2027-05-07 to 2027-05-09 • 2 guests • $130.00").assertIsDisplayed()
     }
+
+    @Test fun addedLottery(){
+        //will do later
+    }
+
+    @Test fun removedLottery(){
+        //will do later
+    }
 }
