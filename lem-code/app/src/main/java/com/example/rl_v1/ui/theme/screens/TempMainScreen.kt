@@ -26,7 +26,7 @@ fun TempMainScreen() {
     val vm : CampsiteViewModel = viewModel()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
+    val currentRoute = backStackEntry?.destination?.route?.substringBefore("?")
 
     var lastTab by rememberSaveable { mutableStateOf(BottomTab.Explore) }
     val routeTab = BottomTab.entries.firstOrNull { it.name == currentRoute }

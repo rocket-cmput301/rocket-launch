@@ -28,13 +28,32 @@ import com.example.rl_v1.ui.theme.components.SmallButtonPrimary
 import com.example.rl_v1.ui.theme.theme.DarkGreen
 import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
 import java.util.Locale
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import com.example.rl_v1.model.ReservationHistory
+import java.time.LocalDate
+
 
 /** Activity tab: the user's reservations, and placeholder lottery cards. */
 @Composable
-fun ActivityScreen(vm: CampsiteViewModel){
-    var showReservations by rememberSaveable { mutableStateOf(false) }
+fun ActivityScreen(
+    vm: CampsiteViewModel,
+    initiallyShowReservations: Boolean = false
+) {
+    var showReservations by rememberSaveable {
+        mutableStateOf(initiallyShowReservations)
+    }
     val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
     val campsites by vm.allCampsites.collectAsStateWithLifecycle()
+    var reservationTab by rememberSaveable { mutableStateOf("Active") }
+    val today = LocalDate.now()
+
+    val visibleReservations = when (reservationTab) {
+        "Active" -> ReservationHistory.active(reservations, today)
+        "Past" -> ReservationHistory.past(reservations, today)
+        else -> reservations
+    }
+
 
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -53,13 +72,49 @@ fun ActivityScreen(vm: CampsiteViewModel){
 
         }
         if (showReservations) {
-            if (reservations.isEmpty()) {
-                item { Text("You have no reservations yet.") }
+            item {
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SmallButtonPrimary(
+                        text = "Active",
+                        onClick = { reservationTab = "Active" },
+                        dark = reservationTab == "Active"
+                    )
+                    SmallButtonPrimary(
+                        text = "Past",
+                        onClick = { reservationTab = "Past" },
+                        dark = reservationTab == "Past"
+                    )
+                    SmallButtonPrimary(
+                        text = "All",
+                        onClick = { reservationTab = "All" },
+                        dark = reservationTab == "All"
+                    )
+                }
             }
-            items(reservations, key = { it.id }) { reservation ->
-                val name = campsites.firstOrNull { it.id == reservation.campsiteId }?.name ?: "Campsite"
+
+            if (visibleReservations.isEmpty()) {
+                item {
+                    val emptyMessage = when (reservationTab) {
+                        "Active" -> "You have no active reservations."
+                        "Past" -> "You have no past reservations."
+                        else -> "You have no reservations yet."
+                    }
+                    Text(emptyMessage)
+                }
+            }
+
+            items(visibleReservations, key = { it.id }) { reservation ->
+                val name = campsites.firstOrNull {
+                    it.id == reservation.campsiteId
+                }?.name ?: "Campsite"
+
                 PrimaryTextBox(
-                    value = "${reservation.checkInDate} to ${reservation.checkOutDate} • " +
+                    value = "${reservation.checkInDate} to " +
+                            "${reservation.checkOutDate} • " +
                             "${reservation.numberOfGuests} guests • $" +
                             String.format(Locale.US, "%.2f", reservation.totalPrice),
                     label = "${reservation.status.uppercase()} • ${name.uppercase()}"

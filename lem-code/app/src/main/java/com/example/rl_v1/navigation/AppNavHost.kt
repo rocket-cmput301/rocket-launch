@@ -155,12 +155,33 @@ fun AppNavHost(
 
         /* OTHER TABS
         -----------------------------------------------------------------------------------*/
-        composable(BottomTab.Activity.name) { ActivityScreen(vm) }
+        composable(
+            route = "${BottomTab.Activity.name}?reservations={reservations}",
+            arguments = listOf(
+                navArgument("reservations") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                }
+            )
+        ) { entry ->
+            ActivityScreen(
+                vm = vm,
+                initiallyShowReservations =
+                    entry.arguments?.getBoolean("reservations") ?: false
+            )
+        }
         composable(BottomTab.Inbox.name) { InboxScreen() }
         composable(BottomTab.Profile.name) {
             ProfileScreen(
-                onPublishCampsite = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
-                onManageCampsites = { navController.navigate(Routes.OWNER_CAMPSITES) }
+                onPublishCampsite = {
+                    navController.navigate(Routes.CAMPSITE_REGISTRATION)
+                },
+                onManageCampsites = {
+                    navController.navigate(Routes.OWNER_CAMPSITES)
+                },
+                onViewReservations = {
+                    navController.navigate("${BottomTab.Activity.name}?reservations=true")
+                }
             )
         }
     }

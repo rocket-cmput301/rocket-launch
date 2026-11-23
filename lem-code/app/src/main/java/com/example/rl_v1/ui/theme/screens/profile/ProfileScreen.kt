@@ -28,8 +28,9 @@ import com.example.rl_v1.ui.theme.theme.Forest
 @Composable
 fun ProfileScreen(
     onPublishCampsite: () -> Unit = {},
-    onManageCampsites: () -> Unit = {}
-){
+    onManageCampsites: () -> Unit = {},
+    onViewReservations: () -> Unit = {}
+) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(16.dp),
@@ -37,6 +38,12 @@ fun ProfileScreen(
     ){
         item{
             ScreenHeader("Profile and Preferences")
+        }
+        item {
+            LargeButtonPrimary(
+                "Your Reservations",
+                onClick = onViewReservations
+            )
         }
         item{
             Header1("Hosting")
