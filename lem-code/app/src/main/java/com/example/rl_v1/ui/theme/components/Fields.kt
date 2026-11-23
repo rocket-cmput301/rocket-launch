@@ -62,6 +62,41 @@ fun PrimaryTextBox(
     }
 
 }
+
+/** Same as [PrimaryTextBox] but the whole box can be tapped. */
+@Composable
+fun ClickablePrimaryTextBox(
+    value: String,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .background(LightGreen)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Forest
+        )
+
+        Spacer(Modifier.height(4.dp))
+
+        if(value != "")
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+    }
+}
+
 /** Same as [PrimaryTextBox] but with a cream background. */
 @Composable
 fun SecondaryTextBox(

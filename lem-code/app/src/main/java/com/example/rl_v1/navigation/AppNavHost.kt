@@ -23,6 +23,8 @@ import com.example.rl_v1.ui.theme.screens.explore.ExploreScreen
 import com.example.rl_v1.ui.theme.screens.explore.MakeFilterScreen
 import com.example.rl_v1.ui.theme.screens.inbox.InboxScreen
 import com.example.rl_v1.ui.theme.screens.owner.OwnerCampsitesScreen
+import com.example.rl_v1.ui.theme.screens.profile.PersonalInformationScreen
+import com.example.rl_v1.ui.theme.screens.profile.ProfilePictureScreen
 import com.example.rl_v1.ui.theme.screens.profile.ProfileScreen
 import com.example.rl_v1.ui.theme.screens.reservation.ReservationConfirmedScreen
 import com.example.rl_v1.ui.theme.screens.reservation.SelectDatesScreen
@@ -164,7 +166,23 @@ fun AppNavHost(
         composable(BottomTab.Profile.name) {
             ProfileScreen(
                 onPublishCampsite = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
-                onManageCampsites = { navController.navigate(Routes.OWNER_CAMPSITES) }
+                onManageCampsites = { navController.navigate(Routes.OWNER_CAMPSITES) },
+                onEditProfilePicture = { navController.navigate(Routes.PROFILE_PICTURE) },
+                onEditPersonalInformation = { navController.navigate(Routes.PERSONAL_INFORMATION) }
+            )
+        }
+        composable(Routes.PROFILE_PICTURE) {
+            ProfilePictureScreen(
+                onBack = { navController.popBackStack() },
+                // TODO: persist photo
+                onSave = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.PERSONAL_INFORMATION) {
+            PersonalInformationScreen(
+                onBack = { navController.popBackStack() },
+                // TODO: persist details
+                onSave = { navController.popBackStack() }
             )
         }
     }

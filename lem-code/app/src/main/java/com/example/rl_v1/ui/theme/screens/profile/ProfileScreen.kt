@@ -26,7 +26,7 @@ import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.components.LargeButtonSecondary
 import com.example.rl_v1.ui.theme.components.PoliciesDialog
 import com.example.rl_v1.ui.theme.components.PrimaryClickableText
-import com.example.rl_v1.ui.theme.components.PrimaryTextBox
+import com.example.rl_v1.ui.theme.components.ClickablePrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
 import com.example.rl_v1.ui.theme.theme.Forest
 
@@ -34,7 +34,11 @@ import com.example.rl_v1.ui.theme.theme.Forest
 @Composable
 fun ProfileScreen(
     onPublishCampsite: () -> Unit = {},
-    onManageCampsites: () -> Unit = {}
+    onManageCampsites: () -> Unit = {},
+    onEditProfilePicture: () -> Unit = {},
+    onEditPersonalInformation: () -> Unit = {},
+    onEditPreferences: () -> Unit = {}, // TODO: no preferences screen yet
+    onEditAccessibility: () -> Unit = {} // TODO: no accessibility screen yet
 ){
     var showPolicies by rememberSaveable { mutableStateOf(false) }
 
@@ -61,36 +65,35 @@ fun ProfileScreen(
             LargeButtonSecondary("Manage my campsites", onClick = onManageCampsites)
         }
         item{
-            PrimaryTextBox(
-                value = "\"Device Linked Profile · No password needed\nChange profile photo",
-                label = "Sample Camper",
-                Modifier.fillMaxSize(),
-
+            ClickablePrimaryTextBox(
+                value = "Change Profile photo >",
+                label = "Profile Photo",
+                onClick = onEditProfilePicture,
+                modifier = Modifier.fillMaxSize(),
             )
         }
         item{
-            PrimaryTextBox(
-                value = "",
+            ClickablePrimaryTextBox(
+                value = "[NAME]\n[EMAIL]",
                 label = "Personal Information",
-                Modifier.fillMaxSize(),
-
-
+                onClick = onEditPersonalInformation,
+                modifier = Modifier.fillMaxSize(),
             )
         }
         item{
-            PrimaryTextBox(
-                value = "\"Forest Hiking Lakeside\\nPersonalizes featured campsites\"",
+            ClickablePrimaryTextBox(
+                value = "\"Forest Hiking Lakeside\nPersonalizes featured campsites\"",
                 label = "Your Outdoor Preferences",
-                Modifier.fillMaxSize(),
-
+                onClick = onEditPreferences,
+                modifier = Modifier.fillMaxSize(),
             )
         }
         item{
-            PrimaryTextBox(
+            ClickablePrimaryTextBox(
                 value = "Accessibility Settings >\nNotifications: On",
                 label = "Make it yours",
-                Modifier.fillMaxSize(),
-
+                onClick = onEditAccessibility,
+                modifier = Modifier.fillMaxSize(),
             )
         }
         item{
