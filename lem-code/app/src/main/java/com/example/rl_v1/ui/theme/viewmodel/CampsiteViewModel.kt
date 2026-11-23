@@ -151,7 +151,7 @@ class CampsiteViewModel(
                         rules = rules.trim(),
                         cancellationPolicy = cancellationPolicy.trim(),
                         availability = DateAvailability(startDate = availableFrom.trim(), endDate = availableTo.trim()),
-                        lottery = null      //must be set separately
+                        //lottery = null      //must be set separately
                     )
                 )
 

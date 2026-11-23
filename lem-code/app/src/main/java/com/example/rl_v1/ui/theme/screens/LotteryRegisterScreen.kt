@@ -80,12 +80,13 @@ fun LotteryRegistrationScreen(
         modifier = Modifier.fillMaxSize()
     ) {
 
-        item{ ScreenHeader(text = "Lottery Settings") }
+        item{ ScreenHeader(text = "Lottery Creation") }                 //'Lottery Settings' is for updating an already existing Lottery
         if (campsites.isEmpty()) {
             item { Text("You haven't published any campsites yet.") }
         }
         else {
             item{
+                Text("Note: Selecting multiple campsites will have the following settings apply to all of the campsites selected. If you wish for campsites to have different lottery settings, make individual lotteries.", fontSize = 12.sp)
                 AppChecklistBox(label = "Campsites", items = campsites.map { it.name }, selectedItems = selectedCampsites, onSelectionChange = {
                     selectedCampsites = it
                 })

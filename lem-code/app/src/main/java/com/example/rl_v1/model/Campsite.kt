@@ -6,7 +6,7 @@ package com.example.rl_v1.model
  * This class is immutable and holds all the details of a campsite;
  *
  * @property id Unique id, assigned when the campsite is published.
- * @property ownerId Id of the owner who published it.
+ * @property ownerId ID of the owner who published it.
  * @property name Display name, e.g. "Hinton Pines".
  * @property location Where the campsite is, e.g. "Hinton, AB".
  * @property maxOccupancy Maximum number of guests.
@@ -42,5 +42,5 @@ data class Campsite(
     val cancellationPolicy: String = "",
     val availability: DateAvailability? = null,
     val geographicFeature: List<String> = emptyList(),
-    val lottery: Lottery? = null
+    //val lottery: Lottery? = null ; //may not need because multiple campsites can be in multiple lotteries
 )

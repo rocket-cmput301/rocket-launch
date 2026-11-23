@@ -31,8 +31,7 @@ import java.time.format.DateTimeParseException
 fun CampsiteRegistrationScreen(
     vm: CampsiteViewModel,
     onBack: () -> Unit,
-    onDone: () -> Unit,
-    onContinue: () -> Unit,
+    onDone: () -> Unit
 ) {
     BackHandler(onBack = onBack)
 
@@ -135,9 +134,7 @@ fun CampsiteRegistrationScreen(
                         onDone = onDone
                     )
                 }
-                //onContinue should be called instead of the button - said button removes the need to fill out a campsite
             })
-            LargeButtonPrimary(text = "Register Lottery", onClick = onContinue)     //shouldn't exist later, exists for developing, onContinue should instead be called in the above button's onClick
         }
     }
 }

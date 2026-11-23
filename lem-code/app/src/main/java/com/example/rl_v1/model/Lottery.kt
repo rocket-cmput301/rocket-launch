@@ -8,7 +8,7 @@
  * @property campsiteIds IDs of the corresponding campsites (US 02.04.02)
  * @property ownerId ID of the Campsite's owner, copied from the campsite
  * @property registrationPeriod The dates the lottery window is open for (is separate from Campsite availability dates) - (US 02.04.03)
- * @property bookingPeriod The dates Users are entering to book for (US 02.04.04)
+ * @property bookingPeriod The dates Users are allowed to make bookings during (US 02.04.04)
  * @property maxWinners The max size of the Lottery's winning pool (set by the Owner via US 02.04.05)
  * @property capacity An option to the owner to set a limit on how many people can join the lottery
  * @property status The current state of the Lottery (OPEN, FULL, COMPLETED)
