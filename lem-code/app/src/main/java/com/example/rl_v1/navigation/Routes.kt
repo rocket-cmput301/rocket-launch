@@ -16,4 +16,6 @@ object Routes {
     const val PROFILE_PICTURE = "profile_picture"
     const val PERSONAL_INFORMATION = "personal_information"
     const val ACCESSIBILITY = "accessibility"
+    const val TEMP_LOGIN = "temp_login"
+    const val TEMP_SIGNUP = "temp_signup"
 }
