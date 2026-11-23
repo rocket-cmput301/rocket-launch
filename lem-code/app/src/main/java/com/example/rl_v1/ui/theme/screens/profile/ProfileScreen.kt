@@ -38,7 +38,7 @@ fun ProfileScreen(
     onEditProfilePicture: () -> Unit = {},
     onEditPersonalInformation: () -> Unit = {},
     onEditPreferences: () -> Unit = {}, // TODO: no preferences screen yet
-    onEditAccessibility: () -> Unit = {} // TODO: no accessibility screen yet
+    onEditAccessibility: () -> Unit = {}
 ){
     var showPolicies by rememberSaveable { mutableStateOf(false) }
 

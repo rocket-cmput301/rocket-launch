@@ -23,6 +23,7 @@ import com.example.rl_v1.ui.theme.screens.explore.ExploreScreen
 import com.example.rl_v1.ui.theme.screens.explore.MakeFilterScreen
 import com.example.rl_v1.ui.theme.screens.inbox.InboxScreen
 import com.example.rl_v1.ui.theme.screens.owner.OwnerCampsitesScreen
+import com.example.rl_v1.ui.theme.screens.profile.AccessibilityScreen
 import com.example.rl_v1.ui.theme.screens.profile.PersonalInformationScreen
 import com.example.rl_v1.ui.theme.screens.profile.ProfilePictureScreen
 import com.example.rl_v1.ui.theme.screens.profile.ProfileScreen
@@ -168,7 +169,8 @@ fun AppNavHost(
                 onPublishCampsite = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
                 onManageCampsites = { navController.navigate(Routes.OWNER_CAMPSITES) },
                 onEditProfilePicture = { navController.navigate(Routes.PROFILE_PICTURE) },
-                onEditPersonalInformation = { navController.navigate(Routes.PERSONAL_INFORMATION) }
+                onEditPersonalInformation = { navController.navigate(Routes.PERSONAL_INFORMATION) },
+                onEditAccessibility = { navController.navigate(Routes.ACCESSIBILITY) }
             )
         }
         composable(Routes.PROFILE_PICTURE) {
@@ -184,6 +186,10 @@ fun AppNavHost(
                 // TODO: persist details
                 onSave = { navController.popBackStack() }
             )
+        }
+        composable(Routes.ACCESSIBILITY) {
+            // TODO: pass the saved notifications setting and persist changes
+            AccessibilityScreen(onBack = { navController.popBackStack() })
         }
     }
 }
