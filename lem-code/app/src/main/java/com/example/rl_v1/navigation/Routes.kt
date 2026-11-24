@@ -13,8 +13,6 @@ object Routes {
     const val CAMPSITE_SELECT = "campsite_select"
 
     const val LOTTERY_REGISTER = "lottery_register"
-    const val LOGIN = "login"
-    const val SIGN_UP = "sign_up"
     const val PROFILE_PICTURE = "profile_picture"
     const val PERSONAL_INFORMATION = "personal_information"
     const val ACCESSIBILITY = "accessibility"
