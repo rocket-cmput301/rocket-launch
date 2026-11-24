@@ -36,7 +36,7 @@ interface LotteryRepository {
     fun observeLotteriesByOwner(ownerId: String): Flow<List<Lottery>>
 
     /** Look at all the Users in one of [ownerId]'s campsite lotteries (US 02.09.01) */
-    fun observeWaitlistUsersByOwner(campsiteId: String, ownerId: String): Flow<Lottery>
+    fun observeWaitlistUsersByOwner(lotteryId: String, ownerId: String): Flow<List<WaitlistEntry>>
 
     /** Send notifications / announcements to all Users in one of [ownerId]'s campsite lotteries (US 02.10.02); Can only be done by Campsite Owners hence the ownerId parameter*/
     fun notifyWaitlistUsers(campsiteId: String, ownerId: String): Unit

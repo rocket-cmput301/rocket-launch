@@ -7,6 +7,7 @@ import com.example.rl_v1.model.DateAvailability
 import com.example.rl_v1.model.Filters
 import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.model.Reservation
+import com.example.rl_v1.model.WaitlistEntry
 import com.example.rl_v1.repository.CampsiteRepository
 import com.example.rl_v1.repository.FirestoreCampsiteRepository
 import com.example.rl_v1.repository.FirestoreLotteryRepository
@@ -26,6 +27,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.rl_v1.search.filterBy
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.callbackFlow
 
 /**
  * connects campsite and reservation screens to Firestore.
@@ -279,7 +283,12 @@ class CampsiteViewModel(
         .observeLotteriesByUser(userId = userId, type = "Not Selected")
         .asState(emptyList())
 
-    //-------------- LOTTERY JOIN/LEAVE CALL FUNCTIONS --------------
+    var ownerOwnedLotteries = lotteryRepo
+        .observeLotteriesByOwner(ownerId = "8bkEYENWDCWqz4mRcdTnWGeLmbv2")  //test
+        //.observeLotteriesByOwner(ownerId = userId)                        //actual
+        .asState(emptyList())
+
+    //-------------- LOTTERY CALL FUNCTIONS; functions that bridge the FirestoreLotteryRepository and a separate Composable file --------------
     fun callJoinLottery(campID: String){
         viewModelScope.launch {
             val lotID = lotteryRepo.getLotteryID(campID)          //find the lottery in 'lotteries' collection in Firestore based on campsite ID
@@ -309,6 +318,15 @@ class CampsiteViewModel(
             lotteryRepo.declineOpportunity(lotID.toString(), userId)           //find the WaitlistEntry turn status to 'TERMINATED'
         }
     }
+
+    /** Called when an Owner is viewing the details of a lottery */
+    fun callViewOwnerWaitlistEntries(lotteryID: String, ownerID: String): Flow<List<WaitlistEntry>> {
+        return lotteryRepo.observeWaitlistUsersByOwner(
+            lotteryId = lotteryID,
+            ownerId = "8bkEYENWDCWqz4mRcdTnWGeLmbv2"
+        )
+    }
+
 
     /** DEV TEST FUNCTION: used to reset all Waitlist Entries */
     fun resetEntries(){

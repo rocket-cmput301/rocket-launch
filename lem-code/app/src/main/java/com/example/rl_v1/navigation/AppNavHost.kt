@@ -24,6 +24,7 @@ import com.example.rl_v1.ui.theme.screens.explore.ExploreScreen
 import com.example.rl_v1.ui.theme.screens.explore.MakeFilterScreen
 import com.example.rl_v1.ui.theme.screens.inbox.InboxScreen
 import com.example.rl_v1.ui.theme.screens.owner.OwnerCampsitesScreen
+import com.example.rl_v1.ui.theme.screens.owner.OwnerLotteryListScreen
 import com.example.rl_v1.ui.theme.screens.profile.ProfileScreen
 import com.example.rl_v1.ui.theme.screens.reservation.ReservationConfirmedScreen
 import com.example.rl_v1.ui.theme.screens.reservation.SelectDatesScreen
@@ -152,7 +153,10 @@ fun AppNavHost(
                 vm = vm,
                 onBack = { navController.popBackStack() },
                 onPublish = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
-                onEdit = { id -> navController.navigate("${Routes.OWNER_EDIT}/$id") }
+                onEdit = { id -> navController.navigate("${Routes.OWNER_EDIT}/$id") },
+                onCreateLottery = { navController.navigate(Routes.LOTTERY_REGISTER)},
+                //onUpdateLottery -> lottery screen
+                onViewWaitlist = { lotId -> navController.navigate("${Routes.LOTTERY_WAITLIST}/$lotId") }
             )
         }
         composable("${Routes.OWNER_EDIT}/{id}", arguments = idArgument) { entry ->
@@ -167,6 +171,23 @@ fun AppNavHost(
                 )
             }
         }
+
+        composable("${Routes.LOTTERY_WAITLIST}/{id}", arguments = idArgument) { lottery ->
+            val id = lottery.arguments?.getString("id")
+            val mine by vm.ownerOwnedLotteries.collectAsStateWithLifecycle()
+            val lottery = mine.firstOrNull {it.id == id}
+
+            if (lottery != null){
+                OwnerLotteryListScreen(
+                    vm = vm,
+                    lottery = lottery,
+                    onBack = { navController.popBackStack() },
+                    onSend = {
+                        //TODO: send announcement (US 02.10.01)
+                    }
+                )
+            }
+    }
 
         /* OTHER TABS
         -----------------------------------------------------------------------------------*/
@@ -183,7 +204,6 @@ fun AppNavHost(
             ProfileScreen(
                 onPublishCampsite = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
                 onManageCampsites = { navController.navigate(Routes.OWNER_CAMPSITES) },
-                onRegisterLottery = { navController.navigate(Routes.LOTTERY_REGISTER)}
             )
         }
     }

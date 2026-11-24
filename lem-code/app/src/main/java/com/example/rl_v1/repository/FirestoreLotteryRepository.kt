@@ -10,6 +10,7 @@
 
 package com.example.rl_v1.repository
 
+import android.system.Os.close
 import com.example.rl_v1.model.DateAvailability
 import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.model.WaitlistEntry
@@ -183,12 +184,38 @@ class FirestoreLotteryRepository(
         awaitClose { listener.remove() }
     }
 
-    override fun observeLotteriesByOwner(ownerId: String): Flow<List<Lottery>> {        //not needed by a user story
-        TODO("Not yet implemented")
+    override fun observeLotteriesByOwner(ownerId: String): Flow<List<Lottery>> = callbackFlow{        //not needed by a user story; but needed by Manage Campsites -> Lottery Screen
+        val query = lotteries.whereEqualTo("ownerId", ownerId)
+        val listener = query.addSnapshotListener { snapshot, error ->
+            if (error != null){
+                close(error)
+            }
+            else if (snapshot != null){
+                val entryList = snapshot.documents.mapNotNull { document ->
+                    document.toObject(Lottery::class.java)?.copy(id = document.id)
+                }
+                trySend(entryList)
+            }
+        }
+        awaitClose { listener.remove() }
     }
 
-    override fun observeWaitlistUsersByOwner(campsiteId: String, ownerId: String): Flow<Lottery> {       //US 02.09.01
-        TODO("Not yet implemented")
+    override fun observeWaitlistUsersByOwner(lotteryId: String, ownerId: String): Flow<List<WaitlistEntry>> = callbackFlow {
+        val query = waitlistEntries
+            .whereEqualTo("lotteryId", lotteryId)
+
+        val listener = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+            } else if (snapshot != null) {
+                val entryList = snapshot.documents.mapNotNull { document ->
+                    document.toObject(WaitlistEntry::class.java)
+                        ?.copy(id = document.id)
+                }
+                trySend(entryList)
+            }
+        }
+        awaitClose { listener.remove() }
     }
 
     override fun notifyWaitlistUsers(campsiteId: String, ownerId: String) {                       //US 02.10.01

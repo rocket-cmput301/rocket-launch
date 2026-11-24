@@ -58,7 +58,7 @@ fun LotteryRegistrationScreen(
     onBack: () -> Unit,
     onDone: () -> Unit
 ){
-    BackHandler(onBack = onBack)
+    BackHandler(onBack = onBack)        //Actual Android 'Back' Button
 
     //val campsites by vm.ownerCampsites.collectAsStateWithLifecycle()          //the actual line we want
     val placeholderOwnerId = "8bkEYENWDCWqz4mRcdTnWGeLmbv2"
@@ -165,7 +165,7 @@ fun LotteryRegistrationScreen(
                 if (openBookWindow) {
                     val restrictionFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
                     DateRangePickerModal(
-                        minDate = LocalDate.parse(registrationPeriod.endDate,restrictionFormatter),        //restrict
+                        minDate = LocalDate.parse(registrationPeriod.endDate,restrictionFormatter),        //restrict Booking Period to start ON or after the Registration Period
                         maxDate = LocalDate.now().plusYears(1),
                         onDateRangeSelected = { valid, pair ->
                             if (valid) {

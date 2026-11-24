@@ -11,6 +11,6 @@ object Routes {
     const val CONVERSATION = "conversation"
     const val FILTERS = "filters"
     const val CAMPSITE_SELECT = "campsite_select"
-
     const val LOTTERY_REGISTER = "lottery_register"
+    const val LOTTERY_WAITLIST = "lottery_waitlist"
 }
