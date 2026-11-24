@@ -13,7 +13,7 @@ package com.example.rl_v1.model
  * @property checkOutDate Departure day, as an ISO date such as "2027-05-09".
  * @property numberOfGuests Number of people in the booking.
  * @property totalPrice Total cost of the stay in dollars.
- * @property status "confirmed" when booked, "rejected" once the owner rejects it.
+ * @property status "confirmed" when booked, "rejected" if the owner rejects it, "cancelled" if the entrant cancels it.
  */
 data class Reservation(
     val id: String = "",

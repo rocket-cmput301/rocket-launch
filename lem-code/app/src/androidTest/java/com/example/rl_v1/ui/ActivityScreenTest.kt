@@ -26,6 +26,20 @@ class ActivityScreenTest {
         composeRule.onNodeWithText("2027-05-07 to 2027-05-09 • 2 guests • $130.00").assertIsDisplayed()
     }
 
+    @Test fun pastFilterShowsCancelledButNotActive() {
+        val cancelled = testReservation.copy(id = "res2", status = "cancelled")
+        val vm = fakeViewModel(reservations = FakeReservationRepository(listOf(testReservation, cancelled)))
+        composeRule.setContent { ActivityScreen(vm) }
+
+        composeRule.onNodeWithText("Reservations").performClick()
+        composeRule.onNodeWithText("Past").performClick()
+
+        composeRule.waitUntil(5000) {
+            composeRule.onAllNodesWithText("CANCELLED • HINTON PINES").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("CONFIRMED • HINTON PINES").assertDoesNotExist()
+    }
+
     @Test fun addedLottery(){
         //will do later
     }
