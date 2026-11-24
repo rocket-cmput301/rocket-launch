@@ -10,13 +10,24 @@ import kotlinx.coroutines.flow.Flow
  */
 interface UserRepository {
     /**
-     * Observes the user profile for [userId] in real time.
-     * If no profile document exists yet, creates and persists a default entrant profile first.
+     * Observes the user profile for [userId] in real time without creating a document.
+     * Emits `null` if no profile document exists yet in Firestore.
      */
-    fun observeUser(userId: String): Flow<UserProfile>
+    fun observeUser(userId: String): Flow<UserProfile?>
 
     /**
-     * Retrieves the user profile for [userId], including when marked as removed (`isRemoved == true`).
+     * Checks if a user profile document exists for [userId] without creating one.
+     * Returns `null` if the user has not completed registration yet.
+     */
+    suspend fun findExistingUser(userId: String): Result<UserProfile?>
+
+    /**
+     * Creates and persists a new [UserProfile] in Firestore upon completed registration.
+     */
+    suspend fun createUserProfile(profile: UserProfile): Result<UserProfile>
+
+    /**
+     * Retrieves the user profile for [userId], including when marked as deleted (`isDeleted == true`).
      * If no profile document exists yet, creates and returns a default entrant profile.
      */
     suspend fun getUser(userId: String): Result<UserProfile>
@@ -42,10 +53,15 @@ interface UserRepository {
     suspend fun setNotificationsEnabled(userId: String, enabled: Boolean): Result<Unit>
 
     /**
-     * Soft-deletes (disables) the profile for [userId] by setting `isRemoved = true`
+     * Soft-deletes (disables) the profile for [userId] by setting `isDeleted = true`
      * rather than deleting the document from Firestore.
      */
     suspend fun deleteProfile(userId: String): Result<Unit>
+
+    /**
+     * Reactivates a soft-deleted profile for [userId] by setting `isDeleted = false`.
+     */
+    suspend fun reactivateUser(userId: String): Result<Unit>
 
     /**
      * Grants or revokes a [role] for [userId].

@@ -35,6 +35,22 @@ class SharedPrefsDeviceIdProvider(
         return createDeviceId()
     }
 
+    /**
+     * Clears the stored device ID so the next call to [getDeviceId] generates a new UUID.
+     * Intended for testing first-time onboarding flows.
+     */
+    override fun resetDeviceId() {
+        prefs.edit { remove(KEY_DEVICE_ID) }
+    }
+
+    override fun setDeviceId(deviceId: String) {
+        val trimmed = deviceId.trim()
+        if (trimmed.isNotEmpty()) {
+            prefs.edit { putString(KEY_DEVICE_ID, trimmed) }
+        }
+    }
+
+
     companion object {
         private const val PREFS_NAME = "campsite_device_prefs"
         private const val KEY_DEVICE_ID = "device_id"

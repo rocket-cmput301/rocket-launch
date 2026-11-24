@@ -6,8 +6,10 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -24,12 +26,14 @@ import com.example.rl_v1.ui.theme.screens.explore.MakeFilterScreen
 import com.example.rl_v1.ui.theme.screens.inbox.InboxScreen
 import com.example.rl_v1.ui.theme.screens.owner.OwnerCampsitesScreen
 import com.example.rl_v1.ui.theme.screens.profile.AccessibilityScreen
+import com.example.rl_v1.ui.theme.screens.profile.PersonalInfo
 import com.example.rl_v1.ui.theme.screens.profile.PersonalInformationScreen
 import com.example.rl_v1.ui.theme.screens.profile.ProfilePictureScreen
 import com.example.rl_v1.ui.theme.screens.profile.ProfileScreen
 import com.example.rl_v1.ui.theme.screens.reservation.ReservationConfirmedScreen
 import com.example.rl_v1.ui.theme.screens.reservation.SelectDatesScreen
 import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
+import com.example.rl_v1.ui.theme.viewmodel.UserViewModel
 
 private val idArgument = listOf(navArgument("id") { type = NavType.StringType })
 
@@ -38,8 +42,23 @@ private val idArgument = listOf(navArgument("id") { type = NavType.StringType })
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    vm: CampsiteViewModel
+    vm: CampsiteViewModel,
+    userViewModel: UserViewModel = viewModel()
 ) {
+    val userUiState by userViewModel.uiState.collectAsStateWithLifecycle()
+    val currentProfile = userUiState.profile
+    val currentPersonalInfo = remember(
+        currentProfile?.name,
+        currentProfile?.email,
+        currentProfile?.phone
+    ) {
+        PersonalInfo(
+            name = currentProfile?.name.orEmpty(),
+            email = currentProfile?.email.orEmpty(),
+            phone = currentProfile?.phone.orEmpty()
+        )
+    }
+
     NavHost(
         navController = navController,
         startDestination = BottomTab.Explore.name,
@@ -166,30 +185,63 @@ fun AppNavHost(
         composable(BottomTab.Inbox.name) { InboxScreen() }
         composable(BottomTab.Profile.name) {
             ProfileScreen(
+                profile = currentProfile,
                 onPublishCampsite = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
                 onManageCampsites = { navController.navigate(Routes.OWNER_CAMPSITES) },
                 onEditProfilePicture = { navController.navigate(Routes.PROFILE_PICTURE) },
                 onEditPersonalInformation = { navController.navigate(Routes.PERSONAL_INFORMATION) },
-                onEditAccessibility = { navController.navigate(Routes.ACCESSIBILITY) }
+                onEditAccessibility = { navController.navigate(Routes.ACCESSIBILITY) },
+                onSaveProfile = {
+                    // Optional if individual edits already save immediately; hook up if you add batch profile save
+                },
+                onDeleteProfile = {
+                    userViewModel.deleteProfile() // or whatever delete/deactivate method your UserViewModel exposes
+                }
             )
         }
         composable(Routes.PROFILE_PICTURE) {
             ProfilePictureScreen(
+                displayName = currentProfile?.name.orEmpty(),
+                currentPhotoUrl = currentProfile?.photoUrl, // adjust if UserProfile uses a different field name
                 onBack = { navController.popBackStack() },
-                // TODO: persist photo
-                onSave = { navController.popBackStack() }
+                onSave = { newPhotoUrl ->
+                    userViewModel.updateProfileImage(newPhotoUrl) { result ->
+                        result.onSuccess {
+                            navController.popBackStack()
+                        }
+                    }
+                }
             )
         }
         composable(Routes.PERSONAL_INFORMATION) {
             PersonalInformationScreen(
+                initialInfo = currentPersonalInfo,
                 onBack = { navController.popBackStack() },
-                // TODO: persist details
-                onSave = { navController.popBackStack() }
+                onSave = { updatedInfo ->
+                    userViewModel.updateContactInfo(
+                        name = updatedInfo.name,
+                        email = updatedInfo.email,
+                        phone = updatedInfo.phone
+                    ) { result ->
+                        result.onSuccess {
+                            navController.popBackStack()
+                        }
+                    }
+                }
             )
         }
         composable(Routes.ACCESSIBILITY) {
-            // TODO: pass the saved notifications setting and persist changes
-            AccessibilityScreen(onBack = { navController.popBackStack() })
+            AccessibilityScreen(
+                notificationsEnabled = currentProfile?.notificationsEnabled ?: true,
+                onNotificationsChange = { enabled ->
+                    userViewModel.setNotificationsEnabled(enabled)
+                },
+                onBack = {
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    }
+                }
+            )
         }
     }
 }

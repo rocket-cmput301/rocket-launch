@@ -14,9 +14,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Purpose: Manages device-based sign-in initialization, active profile observation,
+ * Manages device-based sign-in initialization, active profile observation,
  * and active role selection for multi-role users (especially admins).
- * Design Pattern: MVVM / StateHolder coordinating [DeviceIdProvider] and [UserRepository].
+ * @param deviceIdProvider Provides user id used for session identification.
+ * @param userRepository Provides user profiles.
  */
 class AuthSessionViewModel(
     private val deviceIdProvider: DeviceIdProvider,
@@ -50,16 +51,16 @@ class AuthSessionViewModel(
                     }
                 }
                 .collect { profile ->
-                    val availableRoles = profile.role.ifEmpty { listOf(UserRole.ENTRANT) }
+                    val availableRoles = profile?.role?.ifEmpty { listOf(UserRole.ENTRANT) }
                     _uiState.update { current ->
-                        val nextRole = if (current.activeRole in availableRoles) {
+                        val nextRole = if (availableRoles?.contains(current.activeRole) == true ) {
                             current.activeRole
                         } else {
-                            availableRoles.first()
+                            availableRoles?.first()
                         }
                         current.copy(
                             isLoading = false,
-                            userId = profile.userId.ifBlank { userId },
+                            userId = profile?.userId?.ifBlank { userId } ?: "",
                             profile = profile,
                             activeRole = nextRole,
                             errorMessage = null

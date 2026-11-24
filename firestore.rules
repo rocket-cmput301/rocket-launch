@@ -140,5 +140,10 @@ service cloud.firestore {
     match /waitlistEntries/{entryId} {
       allow read, create, update, delete: if request.auth != null;
     }
+
+    // User Login Rules
+    match /users/{userId} {
+      allow read, create, update, delete: if request.auth != null
+    }
   }
 }

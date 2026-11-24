@@ -19,6 +19,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -37,9 +38,7 @@ import com.example.rl_v1.ui.theme.theme.Rlv1Theme
 /**
  * Accessibility and notification settings, opened from "Make it yours" on the Profile screen.
  *
- * Frontend only: the toggle is kept in local state and reported through [onNotificationsChange].
- *
- * @param notificationsEnabled the saved setting, used as the starting value.
+ * @param notificationsEnabled the saved setting from the user profile, used as the starting value.
  * @param onNotificationsChange called with the new value each time the user flips the switch.
  * @param onBack leave the screen (back arrow).
  */
@@ -50,7 +49,14 @@ fun AccessibilityScreen(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var notificationsOn by rememberSaveable(notificationsEnabled) { mutableStateOf(notificationsEnabled) }
+    var notificationsOn by rememberSaveable { mutableStateOf(notificationsEnabled) }
+    var hasUserToggled by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(notificationsEnabled) {
+        if (!hasUserToggled) {
+            notificationsOn = notificationsEnabled
+        }
+    }
 
     Column(
         modifier = modifier
@@ -91,9 +97,8 @@ fun AccessibilityScreen(
             subtitle = "Get updates about your reservations and lotteries",
             checked = notificationsOn,
             onCheckedChange = { checked ->
+                hasUserToggled = true
                 notificationsOn = checked
-                // TODO: persist the setting (DataStore/Firestore) and, on Android 13+,
-                //  request the POST_NOTIFICATIONS permission when turning it on.
                 onNotificationsChange(checked)
             }
         )

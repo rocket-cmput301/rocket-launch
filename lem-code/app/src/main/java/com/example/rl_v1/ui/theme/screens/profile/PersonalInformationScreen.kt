@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -20,17 +19,17 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,7 +41,6 @@ import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.components.LargeButtonSecondary
 import com.example.rl_v1.ui.theme.components.ScreenHeader
 import com.example.rl_v1.ui.theme.screens.auth.AuthValidation
-import com.example.rl_v1.ui.theme.theme.Cream
 import com.example.rl_v1.ui.theme.theme.Forest
 import com.example.rl_v1.ui.theme.theme.GreyGreen
 import com.example.rl_v1.ui.theme.theme.Rlv1Theme
@@ -79,7 +77,7 @@ internal object PersonalInfoValidation {
         val digits = trimmed.count { it.isDigit() }
         return when {
             !PHONE_CHARS.matches(trimmed) -> "Use only numbers, spaces, ( ) - or +"
-            digits < MIN_PHONE_DIGITS || digits > MAX_PHONE_DIGITS -> "Enter a valid phone number"
+            digits !in MIN_PHONE_DIGITS..MAX_PHONE_DIGITS -> "Enter a valid phone number"
             else -> null
         }
     }
@@ -88,37 +86,53 @@ internal object PersonalInfoValidation {
 /**
  * Lets the user change their name and email, and add, change or remove an optional phone number.
  *
- * Frontend only: loading and saving are stubbed with TODOs. Save is enabled once something has
- * changed; errors are shown after the first Save tap so the user isn't nagged while typing.
+ * Save is enabled once something has changed; errors are shown after the first Save tap so the
+ * user isn't nagged while typing. Persistence is delegated to [onSave] (wired to [UserViewModel]).
  *
+ * @param modifier the Modifier to apply to the overall column.
  * @param initialInfo the user's current details, used to fill the form.
  * @param onBack leave without saving (back arrow and Cancel).
  * @param onSave called with the trimmed, validated details.
  */
 @Composable
 fun PersonalInformationScreen(
-    initialInfo: PersonalInfo = PersonalInfo(name = "Sample Camper", email = "camper@example.com"),
+    modifier: Modifier = Modifier,
+    initialInfo: PersonalInfo = PersonalInfo(),
     onBack: () -> Unit = {},
     onSave: (PersonalInfo) -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
-    // TODO: load initialInfo from the signed-in user (FirebaseAuth / users collection) in a ViewModel.
-    var name by rememberSaveable(initialInfo) { mutableStateOf(initialInfo.name) }
-    var email by rememberSaveable(initialInfo) { mutableStateOf(initialInfo.email) }
-    var phone by rememberSaveable(initialInfo) { mutableStateOf(initialInfo.phone) }
+    var seededInfo by remember { mutableStateOf<PersonalInfo?>(null) }
+    var name by rememberSaveable { mutableStateOf(initialInfo.name) }
+    var email by rememberSaveable { mutableStateOf(initialInfo.email) }
+    var phone by rememberSaveable { mutableStateOf(initialInfo.phone) }
+
+    LaunchedEffect(initialInfo) {
+        // Populate on first non-empty load, or if the underlying profile data itself changed
+        // from what we previously seeded (not just because photoUrl/roles changed).
+        if (seededInfo == null || (initialInfo != seededInfo && initialInfo != PersonalInfo())) {
+            name = initialInfo.name
+            email = initialInfo.email
+            phone = initialInfo.phone
+            seededInfo = initialInfo
+        }
+    }
     var showErrors by rememberSaveable { mutableStateOf(false) }
 
     val nameError = PersonalInfoValidation.nameError(name)
     val emailError = PersonalInfoValidation.emailError(email)
     val phoneError = PersonalInfoValidation.phoneError(phone)
 
-    val current = PersonalInfo(name = name.trim(), email = email.trim(), phone = phone.trim())
-    val hasChanges = current != initialInfo.copy(
+    val current = PersonalInfo(
+        name = name.trim(),
+        email = email.trim(),
+        phone = phone.trim()
+    )
+    val baseline = PersonalInfo(
         name = initialInfo.name.trim(),
         email = initialInfo.email.trim(),
         phone = initialInfo.phone.trim()
     )
-    val emailChanged = current.email != initialInfo.email.trim()
+    val hasChanges = current != baseline
 
     Column(
         modifier = modifier
@@ -197,30 +211,6 @@ fun PersonalInformationScreen(
             }
         }
 
-        if (emailChanged) {
-            Spacer(Modifier.height(16.dp))
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = Cream,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Text(
-                        text = "Changing your email",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Forest
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = "You'll use the new email to log in. We'll send it a link to confirm the change.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = GreyGreen
-                    )
-                }
-            }
-        }
-
         Spacer(Modifier.height(32.dp))
 
         LargeButtonPrimary(
@@ -229,8 +219,6 @@ fun PersonalInformationScreen(
             onClick = {
                 showErrors = true
                 if (nameError == null && emailError == null && phoneError == null) {
-                    // TODO: save name/phone to the user's Firestore document, and if the email
-                    //  changed call FirebaseUser.verifyBeforeUpdateEmail (may need re-authentication).
                     onSave(current)
                 }
             }

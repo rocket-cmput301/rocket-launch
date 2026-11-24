@@ -16,10 +16,10 @@ class FirestoreUserRepository(
     private val usersCollection = firestore.collection("users")
 
     /**
-     * Observes the [UserProfile] for [userId] in real time.
-     * Creates and persists a default entrant profile if none exists yet.
+     * Observes the [UserProfile] for [userId] in real time without creating a document prematurely.
+     * Emits `null` when the document does not exist yet.
      */
-    override fun observeUser(userId: String): Flow<UserProfile> = callbackFlow {
+    override fun observeUser(userId: String): Flow<UserProfile?> = callbackFlow {
         val docRef = usersCollection.document(userId)
         val registration = docRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
@@ -27,15 +27,42 @@ class FirestoreUserRepository(
                 return@addSnapshotListener
             }
             if (snapshot != null && snapshot.exists()) {
-                val profile = snapshot.toUserProfile(fallbackUserId = userId)
-                trySend(profile)
+                trySend(snapshot.toUserProfile(fallbackUserId = userId))
             } else {
-                val defaultProfile = buildDefaultUser(userId)
-                docRef.set(defaultProfile)
-                trySend(defaultProfile)
+                trySend(null)
             }
         }
         awaitClose { registration.remove() }
+    }
+
+    /**
+     * Checks if a user profile exists in Firestore for [userId] without creating one.
+     */
+    override suspend fun findExistingUser(userId: String): Result<UserProfile?> = runCatching {
+        val snapshot = usersCollection.document(userId).get().await()
+        if (snapshot.exists()) {
+            snapshot.toUserProfile(fallbackUserId = userId)
+        } else {
+            null
+        }
+    }
+
+    /**
+     * Creates and persists a new [UserProfile] upon completed registration.
+     */
+    override suspend fun createUserProfile(profile: UserProfile): Result<UserProfile> = runCatching {
+        val data = mapOf(
+            "userId" to profile.userId,
+            "name" to profile.name,
+            "email" to profile.email,
+            "phone" to profile.phone,
+            "role" to profile.role.map { it.name },
+            "photoUrl" to profile.photoUrl,
+            "notificationsEnabled" to profile.notificationsEnabled,
+            "isDeleted" to profile.isDeleted
+        )
+        usersCollection.document(profile.userId).set(data).await()
+        profile
     }
 
     /**
@@ -94,6 +121,13 @@ class FirestoreUserRepository(
     }
 
     /**
+     * Reactivates a soft-deleted profile for [userId] by setting `isDeleted = false`.
+     */
+    override suspend fun reactivateUser(userId: String): Result<Unit> = runCatching {
+        usersCollection.document(userId).update("isDeleted", false).await()
+    }
+
+    /**
      * Grants or revokes [role] for [userId] on the `role` array field.
      */
     override suspend fun updateUserRole(
@@ -128,7 +162,7 @@ class FirestoreUserRepository(
     /** Creates and persists a default entrant [UserProfile] for [userId] in Firestore. */
     private suspend fun createDefaultUser(userId: String): UserProfile {
         val defaultProfile = buildDefaultUser(userId)
-        usersCollection.document(userId).set(defaultProfile).await()
+        createUserProfile(defaultProfile).getOrThrow()
         return defaultProfile
     }
 }
