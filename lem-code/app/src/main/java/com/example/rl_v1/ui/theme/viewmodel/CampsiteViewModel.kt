@@ -151,7 +151,6 @@ class CampsiteViewModel(
                         rules = rules.trim(),
                         cancellationPolicy = cancellationPolicy.trim(),
                         availability = DateAvailability(startDate = availableFrom.trim(), endDate = availableTo.trim()),
-                        //lottery = null      //must be set separately
                     )
                 )
 
@@ -295,7 +294,7 @@ class CampsiteViewModel(
         }
     }
 
-    /** Called when Lottery is to select its winners ; called when a lottery's registration period ends */
+    /** Called when Lottery is to select its winners ; called when a lottery's registration period ends; how is this implemented though */
     fun callWinnerSelection(campID: String): Unit{
         viewModelScope.launch {
             val lotID = lotteryRepo.getLotteryID(campID = campID)

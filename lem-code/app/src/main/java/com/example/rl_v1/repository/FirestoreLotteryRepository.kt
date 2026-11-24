@@ -73,6 +73,7 @@ class FirestoreLotteryRepository(
             if (!exists.isEmpty){
                 println("Entrant already in lottery!")
                 // TODO: notify the user they are already in the lottery via UI: banner pop-up notification maybe?
+
             }
             else{
                 waitlistEntries.add(newEntry)
@@ -94,14 +95,11 @@ class FirestoreLotteryRepository(
             .whereEqualTo("lotteryId", lotteryId)
             .limit(1)
             .get().await()
-        if (exists.isEmpty){
-            println("Entry does not exist")     //shouldn't expect to be printed at all
-        }
-        else{
+        if (!exists.isEmpty){
             for (document in exists.documents){
                 document.reference.delete().await()
             }
-            //println("successfully deleted entry")       //doesn't need to notify User since it disappears on their UI --
+            //doesn't need to notify User since it disappears on their UI --
         }
     }
 
@@ -129,7 +127,7 @@ class FirestoreLotteryRepository(
     override fun observeLotteriesByUser(userId: String, type: String): Flow<List<Lottery>>{
         return combine(observeAllLotteries(), observeEntriesByUser(userId)) { lotteries, entries ->
             when (type) {
-                "Selected" -> { //TODO: return a Flow List of Lotteries the User has won (been randomly selected in) after Lottery Selection has been implemented
+                "Selected" -> {     //return a Flow List of Lotteries the User has won (been randomly selected in)
                     val openLotteries = lotteries.filter {it.status == "OPEN"}
                     val userWonEntries = entries.filter {
                         it.entrantId == userId &&
@@ -154,7 +152,7 @@ class FirestoreLotteryRepository(
                         openLotteries.find { it.id == entry.lotteryId }
                     }
                 }
-                "Not Selected" -> { //TODO: return a Flow List of Lotteries the User has lost after Lottery Selection has been implemented
+                "Not Selected" -> { //return a Flow List of Lotteries the User has lost
                     val openLotteries = lotteries.filter { it.status == "OPEN" }
                     val userLostEntries = entries.filter {
                         it.entrantId == userId &&
@@ -216,7 +214,7 @@ class FirestoreLotteryRepository(
 
             //if User is successfully notified and granted permissions
             usersGranted +=1
-            println("Updated ${winner.id} to WON")
+            //println("Updated ${winner.id} to WON")
         }
 
         //TODO: notify all other Users that they lost the lottery (US 01.03.02)
@@ -309,12 +307,9 @@ class FirestoreLotteryRepository(
             .await()
         for (entry in chosenEntry.documents){                                               //for loop may not be the best way to do this but its the only way I know right now
             if (entry.toObject(WaitlistEntry::class.java)?.status == "WON"){    //check if its a winning entry (it should be)
-                entry.reference.update("status","TERMINATED").await()       //only then, change it to terminated
+                entry.reference.update("status","TERMINATED").await()        //only then, change it to terminated
 
                 //OPTIONALLY let the User provide a reason
-            }
-            else{
-                println("$entry is not a winning entry!")
             }
         }
     }
@@ -325,7 +320,6 @@ class FirestoreLotteryRepository(
             .get()
             .await()
         for (entry in toDelete.documents){
-            //println("WILL DELETE: $entry")
             entry.reference.delete()
         }
     }

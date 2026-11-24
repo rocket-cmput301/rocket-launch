@@ -88,33 +88,7 @@ fun AppNavHost(
 
         /* RESERVATIONS
         -----------------------------------------------------------------------------------*/
-        composable("${Routes.SELECT_DATES}/{id}", arguments = idArgument) { entry ->
-            // -- ORIGINAL --
-            /*
-            val id = entry.arguments?.getString("id")
-            val all by vm.allCampsites.collectAsStateWithLifecycle()
-            val message by vm.message.collectAsStateWithLifecycle()
-            val campsite = all.firstOrNull { it.id == id }
-            LaunchedEffect(Unit) { vm.clearMessage() }
-
-            if (campsite != null) {
-                SelectDatesScreen(
-                    campsite = campsite,
-                    message = message,
-                    onBack = { navController.popBackStack() },
-                    onConfirm = { checkIn, checkOut, guests ->
-                        vm.book(campsite, checkIn, checkOut, guests) { reservation ->
-                            navController.navigate("${Routes.RESERVATION_CONFIRMED}/${reservation.id}") {
-                                // Back from the confirmation shouldn't reopen the date picker.
-                                popUpTo("${Routes.SELECT_DATES}/{id}") { inclusive = true }
-                            }
-                        }
-                    }
-                )
-            }*/
-            // -- ORIGINAL --
-
-
+        composable("${Routes.SELECT_DATES}/{id}", arguments = idArgument) { entry ->        //whole block modified for Multiple-Campsite Lotteries
             val lotID = entry.arguments?.getString("id")
             val all by vm.allCampsites.collectAsStateWithLifecycle()
             val message by vm.message.collectAsStateWithLifecycle()
@@ -125,8 +99,6 @@ fun AppNavHost(
             val campsites = all.filter { correspondingLottery?.campsiteIds?.contains(it.id) == true  }
 
             LaunchedEffect(Unit) { vm.clearMessage() }
-
-
             SelectDatesScreen(
                 campsites = campsites,
                 message = message,
@@ -198,18 +170,8 @@ fun AppNavHost(
 
         /* OTHER TABS
         -----------------------------------------------------------------------------------*/
-        composable(BottomTab.Activity.name) {
+        composable(BottomTab.Activity.name) {                                       //whole block modified for multi-campsite lotteries
             val allLots = vm.userWonLotteries.collectAsStateWithLifecycle()
-
-            /* -- ORIGINAL --
-            ActivityScreen(vm, onBook = { campsiteId ->
-                val campsite = all.firstOrNull{ it.id == campsiteId}
-                if (campsite != null){
-                    navController.navigate("${Routes.SELECT_DATES}/${campsite.id}")
-                }
-            })  -- ORIGINAL --
-            */
-
             ActivityScreen(vm, onBook = { lotteryId ->
                 val correspondingLottery = allLots.value.find { it.id == lotteryId }        //should only ever be 1 lottery; said 1 lottery can hold many campsites though
                 navController.navigate("${Routes.SELECT_DATES}/${correspondingLottery?.id}")
