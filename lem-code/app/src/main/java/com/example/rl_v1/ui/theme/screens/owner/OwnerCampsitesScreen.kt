@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.rl_v1.model.Reservation
 import com.example.rl_v1.ui.theme.components.CampsiteCard
 import com.example.rl_v1.ui.theme.components.Header1
 import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
@@ -27,8 +28,8 @@ import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
 import java.util.Locale
 
 /**
- * Owner overview (Fig. 13): the signed-in user's campsites and the
- * reservations made on them. Tapping a campsite opens its edit screen.
+ * Owner overview (Fig. 13): the signed-in user's campsites with their booked
+ * dates, and the reservations made on them. Tapping a campsite opens its edit screen.
  */
 @Composable
 fun OwnerCampsitesScreen(
@@ -61,11 +62,17 @@ fun OwnerCampsitesScreen(
         }
 
         items(campsites, key = { it.id }) { campsite ->
-            CampsiteCard(
-                campsite,
-                Modifier.fillMaxWidth(),
-                onClick = { onEdit(campsite.id) }
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                CampsiteCard(
+                    campsite,
+                    Modifier.fillMaxWidth(),
+                    onClick = { onEdit(campsite.id) }
+                )
+                PrimaryTextBox(
+                    value = bookedDatesFor(campsite.id, reservations),
+                    label = "BOOKED DATES"
+                )
+            }
         }
 
         item { Header1("Reservations on my campsites") }
@@ -95,4 +102,33 @@ fun OwnerCampsitesScreen(
             }
         }
     }
+}
+
+/**
+ * The booked dates for one campsite, one stay per line, earliest first.
+ * Rejected reservations are skipped because their nights are free again.
+ */
+fun bookedDatesFor(campsiteId: String, reservations: List<Reservation>): String {
+    val booked = mutableListOf<Reservation>()
+    for (reservation in reservations) {
+        if (reservation.campsiteId == campsiteId && reservation.status != "rejected") {
+            booked.add(reservation)
+        }
+    }
+
+    if (booked.isEmpty()) {
+        return "No booked dates yet."
+    }
+
+    // Dates look like "2027-05-07", so sorting the text also sorts by date.
+    val sorted = booked.sortedBy { it.checkInDate }
+
+    var text = ""
+    for (reservation in sorted) {
+        if (text != "") {
+            text += "\n"
+        }
+        text += "${reservation.checkInDate} to ${reservation.checkOutDate}"
+    }
+    return text
 }
