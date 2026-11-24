@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.rl_v1.ui.theme.components.ClickablePrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
 import com.example.rl_v1.ui.theme.components.ToggleableRow
 import com.example.rl_v1.ui.theme.theme.Forest
@@ -78,7 +79,7 @@ fun AccessibilityScreen(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = "Choose how you want the app to respond to your needs.",
+            text = "Preview changes before saving.",
             style = MaterialTheme.typography.bodyMedium,
             color = GreyGreen,
             modifier = Modifier.padding(horizontal = 4.dp)
@@ -96,6 +97,27 @@ fun AccessibilityScreen(
                 //  request the POST_NOTIFICATIONS permission when turning it on.
                 onNotificationsChange(checked)
             }
+        )
+        Spacer(Modifier.height(8.dp))
+        ClickablePrimaryTextBox(
+            value = "On",
+            label = "Colour Vision Support",
+            onClick = { /*TODO*/ },
+            modifier = Modifier.fillMaxSize(),
+        )
+        Spacer(Modifier.height(8.dp))
+        ClickablePrimaryTextBox(
+            value = "Standard",
+            label = "Text Size",
+            onClick = { /*TODO*/ },
+            modifier = Modifier.fillMaxSize(),
+        )
+        Spacer(Modifier.height(8.dp))
+        ClickablePrimaryTextBox(
+            value = "Standard",
+            label = "Buttons and Controls",
+            onClick = { /*TODO*/ },
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }
