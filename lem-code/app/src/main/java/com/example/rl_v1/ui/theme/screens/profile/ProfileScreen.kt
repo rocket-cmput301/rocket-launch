@@ -28,7 +28,8 @@ import com.example.rl_v1.ui.theme.theme.Forest
 @Composable
 fun ProfileScreen(
     onPublishCampsite: () -> Unit = {},
-    onManageCampsites: () -> Unit = {}
+    onManageCampsites: () -> Unit = {},
+    onRegisterLottery: () -> Unit = {}
 ){
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -44,6 +45,14 @@ fun ProfileScreen(
         item{
             LargeButtonPrimary("Publish a campsite", onClick = onPublishCampsite)
         }
+        item{
+            LargeButtonPrimary("Register Lottery", onClick = onRegisterLottery)
+        }
+        /*
+        item{
+            LargeButtonPrimary("Update Lottery", onClick = onUpdateLottery)
+        }
+        */
         item{
             LargeButtonSecondary("Manage my campsites", onClick = onManageCampsites)
         }

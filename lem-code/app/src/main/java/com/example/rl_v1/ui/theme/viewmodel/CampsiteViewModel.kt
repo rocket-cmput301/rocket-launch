@@ -53,6 +53,11 @@ class CampsiteViewModel(
         .observeCampsitesByOwner(userId)
         .asState(emptyList())
 
+    /** dev test function -- won't be called  in the final product */
+    fun specificOwnerSite(ownerID: String): StateFlow<List<Campsite>> {
+        return campsiteRepo.observeCampsitesByOwner(ownerId = ownerID).asState(emptyList())
+    }
+
 
     private val _searchQuery = MutableStateFlow("")
 
@@ -146,8 +151,7 @@ class CampsiteViewModel(
                         rules = rules.trim(),
                         cancellationPolicy = cancellationPolicy.trim(),
                         availability = DateAvailability(startDate = availableFrom.trim(), endDate = availableTo.trim()),
-                        lottery = Lottery(registrationPeriod = DateAvailability(availableFrom.trim(), availableTo.trim()))  //test
-                        //lottery = Lottery()
+                        //lottery = null      //must be set separately
                     )
                 )
 
@@ -276,7 +280,7 @@ class CampsiteViewModel(
         .observeLotteriesByUser(userId = userId, type = "Not Selected")
         .asState(emptyList())
 
-    //LOTTERY JOIN/LEAVE call functions
+    //-------------- LOTTERY JOIN/LEAVE CALL FUNCTIONS --------------
     fun callJoinLottery(campID: String){
         viewModelScope.launch {
             val lotID = lotteryRepo.getLotteryID(campID)          //find the lottery in 'lotteries' collection in Firestore based on campsite ID
@@ -312,5 +316,33 @@ class CampsiteViewModel(
         viewModelScope.launch {
             lotteryRepo.resetEntries(userId)
         }
+    }
+    //-------------- LOTTERY JOIN/LEAVE CALL FUNCTIONS --------------
+
+    /** Called when Owner wishes to publish their lottery */
+    fun callPublishLottery(
+        campsiteIDs: List<String>,
+        ownerID: String,
+        registrationPeriod: DateAvailability,
+        bookingPeriod: DateAvailability,
+        maxWinners: Int,
+        capacity: Int?,
+        onDone: () -> Unit = {}
+    ){
+        viewModelScope.launch {
+            try{
+                lotteryRepo.publishLottery(
+                    Lottery(id="",  campsiteIds = campsiteIDs, ownerId = userId, registrationPeriod = registrationPeriod, bookingPeriod = bookingPeriod, maxWinners = maxWinners, capacity = capacity)
+                //Lottery(id="",  campsiteIds = campsiteIDs, ownerId = ownerID, registrationPeriod = registrationPeriod, bookingPeriod = bookingPeriod, maxWinners = maxWinners, capacity = capacity)
+                )
+                _message.value = "Published Lottery"
+            }
+            catch (error: CancellationException){
+                throw error
+            } catch (error: Exception){
+                _message.value = "Could not publish: ${error.message}"
+            }
+        }
+
     }
 }

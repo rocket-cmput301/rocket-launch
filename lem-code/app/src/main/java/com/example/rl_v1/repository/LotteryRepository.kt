@@ -11,6 +11,12 @@ import kotlinx.coroutines.flow.Flow
 
 interface LotteryRepository {
 
+    /** Adds a new verified Lottery to the Firebase 'lotteries' collection */
+    suspend fun publishLottery(lottery: Lottery): Lottery
+
+    /** Updates an already existing Lottery per an Owner's request */
+    suspend fun updateLottery(lottery: Lottery): Unit
+
     /** Creates a WaitlistEntry instance corresponding to a Lottery */
     suspend fun joinWaitlist(lotteryId: String, entrantId: String): Unit
 

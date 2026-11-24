@@ -32,7 +32,10 @@ import androidx.compose.runtime.remember
 
 /** Activity tab: the user's reservations, and placeholder lottery cards. */
 @Composable
-fun ActivityScreen(vm: CampsiteViewModel){
+fun ActivityScreen(
+    vm: CampsiteViewModel,
+    onBook: (String) -> Unit
+){
     var showReservations by rememberSaveable { mutableStateOf(false) }
     val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
     val campsites by vm.allCampsites.collectAsStateWithLifecycle()
@@ -80,25 +83,39 @@ fun ActivityScreen(vm: CampsiteViewModel){
             }
             else{
                 items(selectedLotteries, key = {it.id}) { lottery ->
+                    var confirmDecline by remember {mutableStateOf(false)}
                     val correspondingCampsite = campsites.filter { it.id in lottery.campsiteIds }
                     PrimaryTextBox(
-                        value = "You can book now. Choose remaining dates by ${lottery.registrationPeriod.endDate}",
+                        value = "You can book now. Choose remaining dates before ${lottery.bookingPeriod.endDate}.",
                         label = "SELECTED • ${correspondingCampsite.joinToString { it.name }}",
                         Modifier.fillMaxSize().padding(bottom = 8.dp),
                     )
                     LargeButtonPrimary(
                         "Choose campsite & dates",
-                        onClick = {
-                            //TODO: prompt the same 'Select Dates' button from CampsiteDetailsScreen.kt (US 01.04.01 and US 01.04.02)
-                        })
-                    PrimaryClickableText(
-                        text = "Decline Opportunity",
-                        textColor = DarkGreen,
-                        onClick = {
-                            vm.callDeclineOp(campID = lottery.campsiteIds[0])              //set status to 'TERMINATED' after a confirmation (US 01.04.03)
-                        },
-                        modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        onClick = { onBook(lottery.id) }                            //prompt the same 'Select Dates' button from CampsiteDetailsScreen.kt (US 01.04.01 and US 01.04.02)
                     )
+                    if (confirmDecline){
+                        PrimaryClickableText(
+                            text = "Cancel Decline",
+                            textColor = DarkGreen,
+                            onClick = { confirmDecline = false },
+                            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        )
+                        PrimaryClickableText(
+                            text = "Confirm Decline",
+                            textColor = DarkGreen,
+                            onClick = { vm.callDeclineOp(campID = lottery.campsiteIds[0]) },              //set status to 'TERMINATED' after a confirmation (US 01.04.03)
+                            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        )
+                    }
+                    else{
+                        PrimaryClickableText(
+                            text = "Decline Opportunity",
+                            textColor = DarkGreen,
+                            onClick = { confirmDecline = true },
+                            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        )
+                    }
                 }
             }
 

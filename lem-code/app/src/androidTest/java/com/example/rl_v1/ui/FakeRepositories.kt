@@ -76,6 +76,14 @@ class FakeReservationRepository(reservations: List<Reservation>) : ReservationRe
 }
 
 class FakeLotteryRepository: LotteryRepository{
+    override suspend fun publishLottery(lottery: Lottery): Lottery {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateLottery(lottery: Lottery) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun joinWaitlist(lotteryId: String, entrantId: String) {
         TODO("Not yet implemented")
     }
