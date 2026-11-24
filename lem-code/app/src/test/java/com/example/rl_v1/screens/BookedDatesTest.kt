@@ -39,6 +39,11 @@ class BookedDatesTest {
         assertEquals("2027-05-07 to 2027-05-09", bookedDatesFor("hinton", listOf(may, rejected)))
     }
 
+    @Test fun cancelledReservationsAreSkipped() {
+        val cancelled = june.copy(status = "cancelled")
+        assertEquals("2027-05-07 to 2027-05-09", bookedDatesFor("hinton", listOf(may, cancelled)))
+    }
+
     @Test fun onlyRejectedShowsANote() {
         val rejected = may.copy(status = "rejected")
         assertEquals("No booked dates yet.", bookedDatesFor("hinton", listOf(rejected)))

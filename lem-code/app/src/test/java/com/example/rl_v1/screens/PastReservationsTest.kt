@@ -42,6 +42,11 @@ class PastReservationsTest {
         assertTrue(pastReservations(listOf(rejected), today).isEmpty())
     }
 
+    @Test fun cancelledStayIsNotPast() {
+        val cancelled = past.copy(status = "cancelled")
+        assertTrue(pastReservations(listOf(cancelled), today).isEmpty())
+    }
+
     @Test fun mostRecentCheckOutComesFirst() {
         assertEquals(listOf(endsToday, past, older), pastReservations(listOf(older, endsToday, past), today))
     }

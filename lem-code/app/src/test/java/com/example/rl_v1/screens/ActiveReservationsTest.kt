@@ -41,6 +41,11 @@ class ActiveReservationsTest {
         assertTrue(activeReservations(listOf(rejected), today).isEmpty())
     }
 
+    @Test fun cancelledStayIsNotActive() {
+        val cancelled = future.copy(status = "cancelled")
+        assertTrue(activeReservations(listOf(cancelled), today).isEmpty())
+    }
+
     @Test fun earliestCheckInComesFirst() {
         assertEquals(listOf(ongoing, future), activeReservations(listOf(future, ongoing), today))
     }

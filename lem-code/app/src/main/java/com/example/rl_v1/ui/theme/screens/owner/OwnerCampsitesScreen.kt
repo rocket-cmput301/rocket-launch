@@ -30,7 +30,7 @@ import java.util.Locale
 
 /**
  * Owner overview (Fig. 13): the signed-in user's campsites with their booked
- * dates, and the active and past reservations made on them. Tapping a campsite opens its edit screen.
+ * dates, and the active, past and cancelled reservations made on them. Tapping a campsite opens its edit screen.
  */
 @Composable
 fun OwnerCampsitesScreen(
@@ -116,18 +116,54 @@ fun OwnerCampsitesScreen(
                 label = campsiteName.uppercase()
             )
         }
+
+        item { Header1("Cancelled reservations") }
+
+        val cancelled = cancelledReservations(reservations)
+
+        if (cancelled.isEmpty()) {
+            item { Text("No cancelled reservations.") }
+        }
+
+        items(cancelled, key = { it.id }) { reservation ->
+            val campsiteName = campsites.firstOrNull { it.id == reservation.campsiteId }?.name
+                ?: "Campsite"
+            var label = "CANCELLED BY ENTRANT • ${campsiteName.uppercase()}"
+            if (reservation.status == "rejected") {
+                label = "REJECTED BY YOU • ${campsiteName.uppercase()}"
+            }
+            PrimaryTextBox(
+                value = "${reservation.checkInDate} to ${reservation.checkOutDate} • " +
+                        "${reservation.numberOfGuests} guests • " +
+                        "$" + String.format(Locale.US, "%.2f", reservation.totalPrice),
+                label = label
+            )
+        }
     }
 }
 
 /**
- * Reservations that are not rejected and whose stay has ended, most recent first.
+ * Reservations the owner rejected or the entrant cancelled, most recent check-in first.
+ */
+fun cancelledReservations(reservations: List<Reservation>): List<Reservation> {
+    val cancelled = mutableListOf<Reservation>()
+    for (reservation in reservations) {
+        if (reservation.status == "rejected" || reservation.status == "cancelled") {
+            cancelled.add(reservation)
+        }
+    }
+    return cancelled.sortedByDescending { it.checkInDate }
+}
+
+/**
+ * Confirmed reservations whose stay has ended, most recent first.
  * [today] is a date like "2027-05-07". A stay ends on its check-out day.
  */
 fun pastReservations(reservations: List<Reservation>, today: String): List<Reservation> {
     val past = mutableListOf<Reservation>()
     for (reservation in reservations) {
         // Dates look like "2027-05-07", so comparing the text also compares the dates.
-        if (reservation.status != "rejected" && reservation.checkOutDate <= today) {
+        if (reservation.status == "confirmed" && reservation.checkOutDate <= today) {
             past.add(reservation)
         }
     }
@@ -135,14 +171,14 @@ fun pastReservations(reservations: List<Reservation>, today: String): List<Reser
 }
 
 /**
- * Reservations that are not rejected and whose stay hasn't ended yet, earliest first.
+ * Confirmed reservations whose stay hasn't ended yet, earliest first.
  * [today] is a date like "2027-05-07". A stay ends on its check-out day.
  */
 fun activeReservations(reservations: List<Reservation>, today: String): List<Reservation> {
     val active = mutableListOf<Reservation>()
     for (reservation in reservations) {
         // Dates look like "2027-05-07", so comparing the text also compares the dates.
-        if (reservation.status != "rejected" && reservation.checkOutDate > today) {
+        if (reservation.status == "confirmed" && reservation.checkOutDate > today) {
             active.add(reservation)
         }
     }
@@ -151,12 +187,12 @@ fun activeReservations(reservations: List<Reservation>, today: String): List<Res
 
 /**
  * The booked dates for one campsite, one stay per line, earliest first.
- * Rejected reservations are skipped because their nights are free again.
+ * Only confirmed reservations count; rejected or cancelled ones have freed their nights.
  */
 fun bookedDatesFor(campsiteId: String, reservations: List<Reservation>): String {
     val booked = mutableListOf<Reservation>()
     for (reservation in reservations) {
-        if (reservation.campsiteId == campsiteId && reservation.status != "rejected") {
+        if (reservation.campsiteId == campsiteId && reservation.status == "confirmed") {
             booked.add(reservation)
         }
     }
