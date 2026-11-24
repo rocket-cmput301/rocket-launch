@@ -13,6 +13,7 @@ import com.example.rl_v1.repository.FirestoreLotteryRepository
 import com.example.rl_v1.repository.FirestoreReservationRepository
 import com.example.rl_v1.repository.LotteryRepository
 import com.example.rl_v1.repository.ReservationRepository
+import com.example.rl_v1.repository.cancelError
 import com.example.rl_v1.repository.stayNights
 import com.example.rl_v1.search.search
 import com.google.firebase.auth.FirebaseAuth
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.rl_v1.search.filterBy
+import java.time.LocalDate
 
 /**
  * connects campsite and reservation screens to Firestore.
@@ -52,6 +54,11 @@ class CampsiteViewModel(
     val ownerCampsites = campsiteRepo
         .observeCampsitesByOwner(userId)
         .asState(emptyList())
+
+    /** dev test function -- won't be called  in the final product */
+    fun specificOwnerSite(ownerID: String): StateFlow<List<Campsite>> {
+        return campsiteRepo.observeCampsitesByOwner(ownerId = ownerID).asState(emptyList())
+    }
 
 
     private val _searchQuery = MutableStateFlow("")
@@ -146,8 +153,7 @@ class CampsiteViewModel(
                         rules = rules.trim(),
                         cancellationPolicy = cancellationPolicy.trim(),
                         availability = DateAvailability(startDate = availableFrom.trim(), endDate = availableTo.trim()),
-                        lottery = Lottery(registrationPeriod = DateAvailability(availableFrom.trim(), availableTo.trim()))  //test
-                        //lottery = Lottery()
+                        //lottery = null      //must be set separately
                     )
                 )
 
@@ -249,6 +255,23 @@ class CampsiteViewModel(
         }
     }
 
+    /** True if the current user can still cancel [reservation]. */
+    fun canCancel(reservation: Reservation): Boolean =
+        cancelError(reservation, userId, LocalDate.now().toString()) == null
+
+    /** cancels one of the current user's reservations. */
+    fun cancel(reservation: Reservation) {
+        _message.value = "Cancelling..."
+        viewModelScope.launch {
+            val result = reservationRepo.cancel(reservation.id, userId)
+            if (result.isSuccess) {
+                _message.value = "Reservation cancelled"
+            } else {
+                _message.value = "Could not cancel: ${result.exceptionOrNull()?.message}"
+            }
+        }
+    }
+
     /** clears the screens feedback message  */
     fun clearMessage() {
         _message.value = null
@@ -276,7 +299,7 @@ class CampsiteViewModel(
         .observeLotteriesByUser(userId = userId, type = "Not Selected")
         .asState(emptyList())
 
-    //LOTTERY JOIN/LEAVE call functions
+    //-------------- LOTTERY JOIN/LEAVE CALL FUNCTIONS --------------
     fun callJoinLottery(campID: String){
         viewModelScope.launch {
             val lotID = lotteryRepo.getLotteryID(campID)          //find the lottery in 'lotteries' collection in Firestore based on campsite ID
@@ -312,5 +335,33 @@ class CampsiteViewModel(
         viewModelScope.launch {
             lotteryRepo.resetEntries(userId)
         }
+    }
+    //-------------- LOTTERY JOIN/LEAVE CALL FUNCTIONS --------------
+
+    /** Called when Owner wishes to publish their lottery */
+    fun callPublishLottery(
+        campsiteIDs: List<String>,
+        ownerID: String,
+        registrationPeriod: DateAvailability,
+        bookingPeriod: DateAvailability,
+        maxWinners: Int,
+        capacity: Int?,
+        onDone: () -> Unit = {}
+    ){
+        viewModelScope.launch {
+            try{
+                lotteryRepo.publishLottery(
+                    Lottery(id="",  campsiteIds = campsiteIDs, ownerId = userId, registrationPeriod = registrationPeriod, bookingPeriod = bookingPeriod, maxWinners = maxWinners, capacity = capacity)
+                //Lottery(id="",  campsiteIds = campsiteIDs, ownerId = ownerID, registrationPeriod = registrationPeriod, bookingPeriod = bookingPeriod, maxWinners = maxWinners, capacity = capacity)
+                )
+                _message.value = "Published Lottery"
+            }
+            catch (error: CancellationException){
+                throw error
+            } catch (error: Exception){
+                _message.value = "Could not publish: ${error.message}"
+            }
+        }
+
     }
 }

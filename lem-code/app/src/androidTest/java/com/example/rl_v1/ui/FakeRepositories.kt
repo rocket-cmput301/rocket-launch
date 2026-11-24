@@ -73,9 +73,24 @@ class FakeReservationRepository(reservations: List<Reservation>) : ReservationRe
         reservations.value = updated
         return Result.success(Unit)
     }
+
+    override suspend fun cancel(reservationId: String, entrantId: String): Result<Unit> {
+        reservations.value = reservations.value.map {
+            if (it.id == reservationId) it.copy(status = "cancelled") else it
+        }
+        return Result.success(Unit)
+    }
 }
 
 class FakeLotteryRepository: LotteryRepository{
+    override suspend fun publishLottery(lottery: Lottery): Lottery {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateLottery(lottery: Lottery) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun joinWaitlist(lotteryId: String, entrantId: String) {
         TODO("Not yet implemented")
     }

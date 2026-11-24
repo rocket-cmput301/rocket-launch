@@ -10,6 +10,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.time.LocalDate
 import kotlin.math.abs
 
 /**
@@ -20,11 +21,32 @@ fun rejectError(reservation: Reservation, ownerId: String): String? {
     if (reservation.ownerId != ownerId) {
         return "You can only reject reservations on your campsites"
     }
-    if (reservation.status == "rejected") {
-        return "This reservation was already rejected"
+    if (reservation.status != "confirmed") {
+        return "This reservation was already ${reservation.status}"
     }
     return null
 }
+
+/**
+ * Checks whether [entrantId] is allowed to cancel [reservation] on [today] (ISO date).
+ * Returns the error message to show, or null if the reservation can be cancelled.
+ */
+fun cancelError(reservation: Reservation, entrantId: String, today: String): String? {
+    if (reservation.entrantId != entrantId) {
+        return "You can only cancel your own reservations"
+    }
+    if (reservation.status != "confirmed") {
+        return "This reservation was already ${reservation.status}"
+    }
+    if (reservation.checkInDate <= today) {
+        return "This stay has already started"
+    }
+    return null
+}
+
+/** True once a stay has ended, or it was cancelled or rejected. [today] is an ISO date. */
+fun isPast(reservation: Reservation, today: String): Boolean =
+    reservation.status != "confirmed" || reservation.checkOutDate <= today
 
 /**
  * Saves and observes reservations in Cloud Firestore.
@@ -32,7 +54,7 @@ fun rejectError(reservation: Reservation, ownerId: String): String? {
  * Each booked night is also written to `bookedNights/{campsiteId}_{date}`.
  * Booking runs in a transaction that fails if any of those night documents
  * already exists, so two entrants can never book the same night.
- * Cancelling a reservation is not implemented yet.
+ * Rejecting and cancelling both free the reservation's nights.
  */
 class FirestoreReservationRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -122,7 +144,18 @@ class FirestoreReservationRepository(
         Result.failure(error)
     }
 
-    override suspend fun reject(reservationId: String, ownerId: String): Result<Unit> = try {
+    override suspend fun reject(reservationId: String, ownerId: String): Result<Unit> =
+        release(reservationId, "rejected") { rejectError(it, ownerId) }
+
+    override suspend fun cancel(reservationId: String, entrantId: String): Result<Unit> =
+        release(reservationId, "cancelled") { cancelError(it, entrantId, LocalDate.now().toString()) }
+
+    /** Sets [newStatus] on a reservation and frees its booked nights, if [check] returns no error. */
+    private suspend fun release(
+        reservationId: String,
+        newStatus: String,
+        check: (Reservation) -> String?
+    ): Result<Unit> = try {
         firestore.runTransaction { transaction ->
             val reservationRef = reservations.document(reservationId)
             val reservation = transaction.get(reservationRef).toObject(Reservation::class.java)
@@ -130,7 +163,7 @@ class FirestoreReservationRepository(
             if (reservation == null) {
                 throw IllegalStateException("This reservation no longer exists")
             }
-            val error = rejectError(reservation, ownerId)
+            val error = check(reservation)
             if (error != null) {
                 throw IllegalStateException(error)
             }
@@ -148,8 +181,8 @@ class FirestoreReservationRepository(
                 }
             }
 
-            // Mark the reservation rejected and free its nights so they can be booked again.
-            transaction.update(reservationRef, "status", "rejected")
+            // Update the status and free the nights so they can be booked again.
+            transaction.update(reservationRef, "status", newStatus)
             for (nightRef in nightsToFree) {
                 transaction.delete(nightRef)
             }

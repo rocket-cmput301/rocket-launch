@@ -11,6 +11,8 @@ object Routes {
     const val CONVERSATION = "conversation"
     const val FILTERS = "filters"
     const val CAMPSITE_SELECT = "campsite_select"
+
+    const val LOTTERY_REGISTER = "lottery_register"
     const val LOGIN = "login"
     const val SIGN_UP = "sign_up"
     const val PROFILE_PICTURE = "profile_picture"

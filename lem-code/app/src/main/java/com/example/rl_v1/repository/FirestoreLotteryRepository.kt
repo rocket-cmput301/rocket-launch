@@ -32,6 +32,27 @@ class FirestoreLotteryRepository(
     private val lotteries = firestore.collection("lotteries")
     private val waitlistEntries = firestore.collection("waitlistEntries")   //almost implemented
 
+    /** Saves a new Lottery and returns it with its generated document ID */
+    override suspend fun publishLottery(lottery: Lottery): Lottery {
+        //require( what we want ) { what shows if the condition we want is not met }
+        require(lottery.id.isBlank()) { "This lottery already exists, update instead." }
+        require(lottery.ownerId.isNotBlank()) { "An owner is required" }
+        require(lottery.campsiteIds.isNotEmpty()) { "No campsites have been selected for this lottery." }
+        require(lottery.registrationPeriod.startDate.isNotEmpty() && lottery.registrationPeriod.endDate.isNotEmpty()) { "Registration Period invalid." }
+        require(lottery.bookingPeriod.startDate.isNotEmpty() && lottery.bookingPeriod.endDate.isNotEmpty()) { "Booking period invalid." }
+        require(lottery.maxWinners > 0) { "Requires positive (>0) number of lottery winners" }
+
+        val document = lotteries.document()
+        val savedLottery = lottery.copy(id = document.id)
+
+        document.set(savedLottery).await()
+        return savedLottery
+    }
+
+    override suspend fun updateLottery(lottery: Lottery) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun joinWaitlist(lotteryId: String, entrantId: String): Unit {
         val chosenLottery = lotteries.document(lotteryId)
         if (updateAndCheckStatus(chosenLottery)){
@@ -199,6 +220,7 @@ class FirestoreLotteryRepository(
         }
 
         //TODO: notify all other Users that they lost the lottery (US 01.03.02)
+        notifyLosers()
 
         return usersGranted
     }
@@ -207,6 +229,27 @@ class FirestoreLotteryRepository(
     EXTERNAL FUNCTIONS ----------
      */
 
+    /**
+     *  Notifies all losers of a lottery that they lost the lottery & changes the status of their WaitlistEntry from 'WAITING' -> 'TERMINATED'
+     *
+     *  Called within selectWinners
+     *
+     *  @returns nothing
+     */
+    suspend fun notifyLosers(){
+
+    }
+
+    /**
+     *  Extension function that updates a Lottery's status and returns a boolean on if it is still possible to join
+     *
+     *  Defined here in LotteryRepository to preserve Lottery as a data class
+     *  Currently checks eligibility by:
+     *      - lottery size has less than lottery capacity
+     *      - current date is within the registration period
+     *
+     *  @returns Boolean : true if the lottery is still eligible to join false otherwise
+     */
     override suspend fun updateAndCheckStatus(lotteryDocument: DocumentReference): Boolean{
         val entryCount = waitlistEntries
             .whereEqualTo("lotteryId",lotteryDocument.id)    //find matching lotteries
@@ -257,7 +300,7 @@ class FirestoreLotteryRepository(
      *
      *  @returns nothing
      */
-    override suspend fun declineOpportunity(lotteryID: String, entrantID: String){
+    override suspend fun declineOpportunity(lotteryID: String, entrantID: String): Unit{
         val chosenEntry = waitlistEntries                                                    //fetch the winning entry
             .whereEqualTo("lotteryId", lotteryID)
             .whereEqualTo("entrantId", entrantID)
@@ -268,7 +311,7 @@ class FirestoreLotteryRepository(
             if (entry.toObject(WaitlistEntry::class.java)?.status == "WON"){    //check if its a winning entry (it should be)
                 entry.reference.update("status","TERMINATED").await()       //only then, change it to terminated
 
-                //OPTIONALLY let the User provide a reason -- (US
+                //OPTIONALLY let the User provide a reason
             }
             else{
                 println("$entry is not a winning entry!")

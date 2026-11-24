@@ -16,6 +16,7 @@ import androidx.navigation.navArgument
 import com.example.rl_v1.ui.theme.components.BottomTab
 import com.example.rl_v1.ui.theme.screens.CampsiteEditScreen
 import com.example.rl_v1.ui.theme.screens.CampsiteRegistrationScreen
+import com.example.rl_v1.ui.theme.screens.LotteryRegistrationScreen
 import com.example.rl_v1.ui.theme.screens.activity.ActivityScreen
 import com.example.rl_v1.ui.theme.screens.explore.CampsiteDetailsScreen
 import com.example.rl_v1.ui.theme.screens.explore.CampsiteSelectScreen
@@ -80,7 +81,6 @@ fun AppNavHost(
                 CampsiteDetailsScreen(
                     campsite = campsite,
                     onBack = { navController.popBackStack() },
-                    onBook = { navController.navigate("${Routes.SELECT_DATES}/${campsite.id}") },
                     onJoin = {
                         vm.callJoinLottery(campID = campsite.id)    //the Real Lottery Repo
                         //navController.navigate(BottomTab.Activity.name)         // commented for now since a bug arises where 'Explore' in navbar doesn't work if this gets called
@@ -92,6 +92,8 @@ fun AppNavHost(
         /* RESERVATIONS
         -----------------------------------------------------------------------------------*/
         composable("${Routes.SELECT_DATES}/{id}", arguments = idArgument) { entry ->
+            // -- ORIGINAL --
+            /*
             val id = entry.arguments?.getString("id")
             val all by vm.allCampsites.collectAsStateWithLifecycle()
             val message by vm.message.collectAsStateWithLifecycle()
@@ -112,20 +114,58 @@ fun AppNavHost(
                         }
                     }
                 )
-            }
+            }*/
+            // -- ORIGINAL --
+
+
+            val lotID = entry.arguments?.getString("id")
+            val all by vm.allCampsites.collectAsStateWithLifecycle()
+            val message by vm.message.collectAsStateWithLifecycle()
+
+            val selectedLotteries by vm.userWonLotteries.collectAsStateWithLifecycle()
+            val correspondingLottery = selectedLotteries.find {it.id == lotID}
+
+            val campsites = all.filter { correspondingLottery?.campsiteIds?.contains(it.id) == true  }
+
+            LaunchedEffect(Unit) { vm.clearMessage() }
+
+
+            SelectDatesScreen(
+                campsites = campsites,
+                message = message,
+                onBack = { navController.popBackStack() },
+                onConfirm = {selectedSite, checkIn, checkOut, guests ->
+                    vm.book(selectedSite, checkIn, checkOut, guests) { reservation ->
+                        navController.navigate("${Routes.RESERVATION_CONFIRMED}/${reservation.id}") {
+                            // Back from the confirmation shouldn't reopen the date picker.
+                            popUpTo("${Routes.SELECT_DATES}/{id}") { inclusive = true }
+                        }
+                    }
+                }
+            )
         }
         composable("${Routes.RESERVATION_CONFIRMED}/{id}", arguments = idArgument) { entry ->
             val id = entry.arguments?.getString("id")
             val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
             val all by vm.allCampsites.collectAsStateWithLifecycle()
+            val message by vm.message.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) { vm.clearMessage() }
             val reservation = reservations.firstOrNull { it.id == id }
             val campsiteName = all.firstOrNull { it.id == reservation?.campsiteId }?.name ?: "Campsite"
 
             ReservationConfirmedScreen(
                 reservation = reservation,
                 campsiteName = campsiteName,
+                canCancel = reservation != null && vm.canCancel(reservation),
+                onCancel = { reservation?.let { vm.cancel(it) } },
+                message = message,
                 onDone = {
-                    navController.popBackStack(BottomTab.Explore.name, inclusive = false)
+                    // opened from the Activity list: go back there; right after booking: go to Explore
+                    if (navController.previousBackStackEntry?.destination?.route == BottomTab.Activity.name) {
+                        navController.popBackStack()
+                    } else {
+                        navController.popBackStack(BottomTab.Explore.name, inclusive = false)
+                    }
                 }
             )
         }
@@ -139,6 +179,15 @@ fun AppNavHost(
                 onDone = { navController.popBackStack() }
             )
         }
+
+        composable(Routes.LOTTERY_REGISTER) {
+            LotteryRegistrationScreen(
+                vm = vm,
+                onBack = { navController.popBackStack() },
+                onDone = { navController.popBackStack() }
+            )
+        }
+
         composable(Routes.OWNER_CAMPSITES) {
             OwnerCampsitesScreen(
                 vm = vm,
@@ -162,7 +211,28 @@ fun AppNavHost(
 
         /* OTHER TABS
         -----------------------------------------------------------------------------------*/
-        composable(BottomTab.Activity.name) { ActivityScreen(vm) }
+        composable(BottomTab.Activity.name) {
+            val allLots = vm.userWonLotteries.collectAsStateWithLifecycle()
+
+            /* -- ORIGINAL --
+            ActivityScreen(vm, onBook = { campsiteId ->
+                val campsite = all.firstOrNull{ it.id == campsiteId}
+                if (campsite != null){
+                    navController.navigate("${Routes.SELECT_DATES}/${campsite.id}")
+                }
+            })  -- ORIGINAL --
+            */
+
+            ActivityScreen(
+                vm,
+                onBook = { lotteryId ->
+                    val correspondingLottery = allLots.value.find { it.id == lotteryId }        //should only ever be 1 lottery; said 1 lottery can hold many campsites though
+                    navController.navigate("${Routes.SELECT_DATES}/${correspondingLottery?.id}")
+                },
+                onOpenReservation = { id -> navController.navigate("${Routes.RESERVATION_CONFIRMED}/$id") }
+            )
+
+        }
         composable(BottomTab.Inbox.name) { InboxScreen() }
         composable(BottomTab.Profile.name) {
             ProfileScreen(
@@ -170,7 +240,8 @@ fun AppNavHost(
                 onManageCampsites = { navController.navigate(Routes.OWNER_CAMPSITES) },
                 onEditProfilePicture = { navController.navigate(Routes.PROFILE_PICTURE) },
                 onEditPersonalInformation = { navController.navigate(Routes.PERSONAL_INFORMATION) },
-                onEditAccessibility = { navController.navigate(Routes.ACCESSIBILITY) }
+                onEditAccessibility = { navController.navigate(Routes.ACCESSIBILITY) },
+                onRegisterLottery = { navController.navigate(Routes.LOTTERY_REGISTER) }
             )
         }
         composable(Routes.PROFILE_PICTURE) {

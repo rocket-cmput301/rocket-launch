@@ -34,7 +34,6 @@ fun naIfBlank(text: String): String = text.ifBlank { "N/A" }
 fun CampsiteDetailsScreen(
     campsite: Campsite,
     onBack: () -> Unit,
-    onBook: (() -> Unit)? = null,
     onJoin: () -> Unit
 ) {
     // The system back gesture returns to the list instead of closing the app.
@@ -112,9 +111,6 @@ fun CampsiteDetailsScreen(
             //enabled = if (campsite.lottery?.status == "OPEN") true else false,
             enabled = true
         )
-        if (onBook != null) {                                           //only possible if won lottery, may comment
-            LargeButtonPrimary("Choose dates", onClick = onBook)
-        }
     }
 }
 

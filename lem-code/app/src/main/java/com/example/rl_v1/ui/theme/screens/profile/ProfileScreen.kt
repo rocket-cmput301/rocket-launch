@@ -38,7 +38,8 @@ fun ProfileScreen(
     onEditProfilePicture: () -> Unit = {},
     onEditPersonalInformation: () -> Unit = {},
     onEditPreferences: () -> Unit = {}, // TODO: no preferences screen yet
-    onEditAccessibility: () -> Unit = {}
+    onEditAccessibility: () -> Unit = {},
+    onRegisterLottery: () -> Unit = {}
 ){
     var showPolicies by rememberSaveable { mutableStateOf(false) }
 
@@ -61,6 +62,14 @@ fun ProfileScreen(
         item{
             LargeButtonPrimary("Publish a campsite", onClick = onPublishCampsite)
         }
+        item{
+            LargeButtonPrimary("Register Lottery", onClick = onRegisterLottery)
+        }
+        /*
+        item{
+            LargeButtonPrimary("Update Lottery", onClick = onUpdateLottery)
+        }
+        */
         item{
             LargeButtonSecondary("Manage my campsites", onClick = onManageCampsites)
         }
