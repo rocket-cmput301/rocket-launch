@@ -30,7 +30,7 @@ import java.util.Locale
 
 /**
  * Owner overview (Fig. 13): the signed-in user's campsites with their booked
- * dates, and the active reservations made on them. Tapping a campsite opens its edit screen.
+ * dates, and the active and past reservations made on them. Tapping a campsite opens its edit screen.
  */
 @Composable
 fun OwnerCampsitesScreen(
@@ -97,7 +97,41 @@ fun OwnerCampsitesScreen(
                 SmallButtonPrimary("Reject", onClick = { vm.reject(reservation) })
             }
         }
+
+        item { Header1("Past reservations") }
+
+        val past = pastReservations(reservations, LocalDate.now().toString())
+
+        if (past.isEmpty()) {
+            item { Text("No past reservations.") }
+        }
+
+        items(past, key = { it.id }) { reservation ->
+            val campsiteName = campsites.firstOrNull { it.id == reservation.campsiteId }?.name
+                ?: "Campsite"
+            PrimaryTextBox(
+                value = "${reservation.checkInDate} to ${reservation.checkOutDate} • " +
+                        "${reservation.numberOfGuests} guests • " +
+                        "$" + String.format(Locale.US, "%.2f", reservation.totalPrice),
+                label = campsiteName.uppercase()
+            )
+        }
     }
+}
+
+/**
+ * Reservations that are not rejected and whose stay has ended, most recent first.
+ * [today] is a date like "2027-05-07". A stay ends on its check-out day.
+ */
+fun pastReservations(reservations: List<Reservation>, today: String): List<Reservation> {
+    val past = mutableListOf<Reservation>()
+    for (reservation in reservations) {
+        // Dates look like "2027-05-07", so comparing the text also compares the dates.
+        if (reservation.status != "rejected" && reservation.checkOutDate <= today) {
+            past.add(reservation)
+        }
+    }
+    return past.sortedByDescending { it.checkOutDate }
 }
 
 /**
