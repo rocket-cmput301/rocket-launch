@@ -25,11 +25,12 @@ import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.components.PrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
 import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
+import java.time.LocalDate
 import java.util.Locale
 
 /**
  * Owner overview (Fig. 13): the signed-in user's campsites with their booked
- * dates, and the reservations made on them. Tapping a campsite opens its edit screen.
+ * dates, and the active reservations made on them. Tapping a campsite opens its edit screen.
  */
 @Composable
 fun OwnerCampsitesScreen(
@@ -75,33 +76,43 @@ fun OwnerCampsitesScreen(
             }
         }
 
-        item { Header1("Reservations on my campsites") }
+        item { Header1("Active reservations") }
 
-        if (reservations.isEmpty()) {
-            item { Text("No reservations yet.") }
+        val active = activeReservations(reservations, LocalDate.now().toString())
+
+        if (active.isEmpty()) {
+            item { Text("No active reservations.") }
         }
 
-        items(reservations, key = { it.id }) { reservation ->
+        items(active, key = { it.id }) { reservation ->
             val campsiteName = campsites.firstOrNull { it.id == reservation.campsiteId }?.name
                 ?: "Campsite"
-            val rejected = reservation.status == "rejected"
-            var label = campsiteName.uppercase()
-            if (rejected) {
-                label = "REJECTED • $label"
-            }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 PrimaryTextBox(
                     value = "${reservation.checkInDate} to ${reservation.checkOutDate} • " +
                             "${reservation.numberOfGuests} guests • " +
                             "$" + String.format(Locale.US, "%.2f", reservation.totalPrice),
-                    label = label
+                    label = campsiteName.uppercase()
                 )
-                if (!rejected) {
-                    SmallButtonPrimary("Reject", onClick = { vm.reject(reservation) })
-                }
+                SmallButtonPrimary("Reject", onClick = { vm.reject(reservation) })
             }
         }
     }
+}
+
+/**
+ * Reservations that are not rejected and whose stay hasn't ended yet, earliest first.
+ * [today] is a date like "2027-05-07". A stay ends on its check-out day.
+ */
+fun activeReservations(reservations: List<Reservation>, today: String): List<Reservation> {
+    val active = mutableListOf<Reservation>()
+    for (reservation in reservations) {
+        // Dates look like "2027-05-07", so comparing the text also compares the dates.
+        if (reservation.status != "rejected" && reservation.checkOutDate > today) {
+            active.add(reservation)
+        }
+    }
+    return active.sortedBy { it.checkInDate }
 }
 
 /**
