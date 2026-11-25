@@ -36,7 +36,9 @@ fun OwnerLotteryListScreen(
 ){
     BackHandler(onBack = onBack)
 
+    //val campsites by vm.ownerCampsites.collectAsStateWithLifecycle()
     val campsites by vm.specificOwnerSite(ownerID = "8bkEYENWDCWqz4mRcdTnWGeLmbv2").collectAsStateWithLifecycle()   //temporary just to see the 'manage campsites' view when campsites are actually implemented
+
     val myWaitlistEntries by remember(lottery.id) {
         vm.callViewOwnerWaitlistEntries(lotteryID = lottery.id, ownerID = "")
     }.collectAsStateWithLifecycle(initialValue = emptyList())

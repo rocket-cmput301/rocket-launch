@@ -50,8 +50,37 @@ class FirestoreLotteryRepository(
         return savedLottery
     }
 
+    /** Updates a new lottery and returns its already existing document ID  */
     override suspend fun updateLottery(lottery: Lottery) {
-        TODO("Not yet implemented")
+        //require(lottery.id.isNotBlank()) { "This lottery does not exist, cannot update; create a lottery instead." }
+        require(lottery.ownerId.isNotBlank()) { "An owner is required" }
+        require(lottery.campsiteIds.isNotEmpty()) { "No campsites have been selected for this lottery update." }
+        require(lottery.registrationPeriod.startDate.isNotEmpty() && lottery.registrationPeriod.endDate.isNotEmpty()) { "Registration Period invalid." }
+        require(lottery.bookingPeriod.startDate.isNotEmpty() && lottery.bookingPeriod.endDate.isNotEmpty()) { "Booking period invalid." }
+        require(lottery.maxWinners > 0) { "Requires positive (>0) number of lottery winners" }
+
+        //val document = lotteries.document()
+
+        val document = lotteries.document(lottery.id)
+        val snapshot = document.get().await()
+
+        require(snapshot.exists()) { "This lottery no longer exists" }
+
+
+        //require(snapshot.getString("ownerId") == lottery.ownerId) {                                  //actual
+        require(snapshot.getString("ownerId") == "8bkEYENWDCWqz4mRcdTnWGeLmbv2"){        //test placeholder
+            "You can only edit your own lotteries"
+        }
+
+        document.update(
+            mapOf(
+                "campsiteIds" to lottery.campsiteIds,
+                "registrationPeriod" to lottery.registrationPeriod,
+                "bookingPeriod" to lottery.bookingPeriod,
+                "maxWinners" to lottery.maxWinners,
+                "capacity" to lottery.capacity
+            )
+        ).await()
     }
 
     override suspend fun joinWaitlist(lotteryId: String, entrantId: String): Unit {

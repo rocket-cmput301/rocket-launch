@@ -48,9 +48,10 @@ fun OwnerCampsitesScreen(
     onBack: () -> Unit,
     onPublish: () -> Unit,                      //publish campsite
     onEdit: (campsiteId: String) -> Unit,       //edit campsite
-    onCreateLottery: () -> Unit,                 //create lottery
-    //onUpdate: (lotteryId: String) -> Unit     //update lottery
-    onViewWaitlist: (lotteryId: String) -> Unit //view lottery waitlist
+    onCreateLottery: () -> Unit,                //create lottery
+    onViewWaitlist: (lotteryId: String) -> Unit,//view top lottery waitlist;
+    onUpdate: (lotteryId: String) -> Unit,      //update top lottery;
+    onViewDetails: (lotteryId: String) -> Unit  //view selected lottery details (not necessarily top lottery)
 ) {
     BackHandler(onBack = onBack)
 
@@ -65,7 +66,10 @@ fun OwnerCampsitesScreen(
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(16.dp),
-        modifier = Modifier.fillMaxSize().background(Color.White).padding(top = 16.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(top = 16.dp)
     ) {
         item { ScreenHeader("Manage Campsites") }
 
@@ -95,21 +99,21 @@ fun OwnerCampsitesScreen(
                     vm.callViewOwnerWaitlistEntries(lotteryID = lottery.id, ownerID = "")
                 }.collectAsStateWithLifecycle(initialValue = emptyList())
                 val correspondingCampsites = campsites.filter{ it.id in lottery.campsiteIds}
-                var lotteryOptions by remember { mutableStateOf(false) }
 
                 PrimaryTextBox(
                     label = correspondingCampsites.joinToString { it.name },
                     value = "${myWaitlistEntries.size} Entrants • ${lottery.maxWinners} winners • Draws ${lottery.bookingPeriod.startDate}",
-                    modifier = Modifier.clickable(onClick = { lotteryOptions = !lotteryOptions })                             //add the same clickability function as RegistrationPeriod in LotteryRegisterScreen
+                    modifier = Modifier.clickable(onClick = {onViewDetails(lottery.id)})                             //add the same clickability function as RegistrationPeriod in LotteryRegisterScreen
                 )
-                if (lotteryOptions){
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SmallButtonPrimary(text = "View waitlist", onClick = { onViewWaitlist(lottery.id) })    //view waitlist (US 02.09.01)
-                        SmallButtonPrimary(text = "Edit lottery", onClick = {
-                            //TODO: update lottery screen (US 02.04.06)
-                        })
-                    }
-                }
+                /*
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmallButtonPrimary(
+                        text = "View waitlist",
+                        onClick = { onViewWaitlist(lottery.id) })    //view waitlist (US 02.09.01)
+                    SmallButtonPrimary(text = "Edit lottery", onClick = {
+                        //TODO: update lottery screen (US 02.04.06)
+                    })
+                }*/
             }
         }
 

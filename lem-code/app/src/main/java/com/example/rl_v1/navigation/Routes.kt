@@ -13,4 +13,6 @@ object Routes {
     const val CAMPSITE_SELECT = "campsite_select"
     const val LOTTERY_REGISTER = "lottery_register"
     const val LOTTERY_WAITLIST = "lottery_waitlist"
+    const val LOTTERY_DETAILS = "lottery_details"
+    const val LOTTERY_UPDATE = "lottery_update"
 }

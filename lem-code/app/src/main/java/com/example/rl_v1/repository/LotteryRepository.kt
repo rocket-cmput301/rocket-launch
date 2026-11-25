@@ -15,7 +15,7 @@ interface LotteryRepository {
     suspend fun publishLottery(lottery: Lottery): Lottery
 
     /** Updates an already existing Lottery per an Owner's request */
-    suspend fun updateLottery(lottery: Lottery): Unit
+    suspend fun updateLottery(lottery: Lottery)
 
     /** Creates a WaitlistEntry instance corresponding to a Lottery */
     suspend fun joinWaitlist(lotteryId: String, entrantId: String): Unit

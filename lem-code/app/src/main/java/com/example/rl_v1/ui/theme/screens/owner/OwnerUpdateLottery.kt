@@ -1,6 +1,6 @@
-package com.example.rl_v1.ui.theme.screens
+package com.example.rl_v1.ui.theme.screens.owner
 
-
+import android.R
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.rl_v1.model.DateAvailability
+import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.ui.theme.components.AppChecklistBox
 import com.example.rl_v1.ui.theme.components.AppInputTextField
 import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
@@ -45,35 +46,36 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Creates the screen where a Campsite Owner customizes the Lottery settings to their liking for a selection of their campsites
+ *  A screen for an Owner to update the settings of an already existing lottery of theirs
  *
- * Based on Fig. 20 in Figma, covers the following User Stories: US 02.04.01 to 02.04.07
- *
- * @returns nothing
+ *  Not based on a current Figma figure, but rather a varied copy of Fig. 20
+ *  Not just reusing LotteryRegistrationScreen because that is hard coded to publishing a Lottery rather than updating an already existing one
  */
 
 @Composable
-fun LotteryRegistrationScreen(
+fun OwnerLotteryUpdateScreen(
     vm: CampsiteViewModel,
+    targetLottery: Lottery,
     onBack: () -> Unit,
-    onDone: () -> Unit
+    onDone: () -> Unit,
 ){
-    BackHandler(onBack = onBack)        //Actual Android 'Back' Button
+    BackHandler(onBack = onBack)
 
     //val campsites by vm.ownerCampsites.collectAsStateWithLifecycle()          //the actual line we want
     val placeholderOwnerId = "8bkEYENWDCWqz4mRcdTnWGeLmbv2"
     val campsites by vm.specificOwnerSite(placeholderOwnerId).collectAsStateWithLifecycle() //test fetch
-    var regPeriodValid by remember { mutableStateOf(false) }
 
-    var selectedCampsites by remember { mutableStateOf(setOf<String>()) }
+
+    var selectedCampsites by remember { mutableStateOf(targetLottery.campsiteIds.toSet()) }
+    var registrationPeriod by remember { mutableStateOf(targetLottery.registrationPeriod) }
+    var bookingPeriod by remember { mutableStateOf(targetLottery.bookingPeriod) }
+    var numWinners by remember { mutableStateOf(targetLottery.maxWinners.toString()) }
+    var waitlistCapacity by remember { mutableStateOf(targetLottery.capacity.toString()) }
+
     val formatter = SimpleDateFormat("MM/dd/yyyy",Locale.getDefault())
-    var registrationPeriod by remember { mutableStateOf(DateAvailability("")) }
-    var bookingPeriod by remember { mutableStateOf(DateAvailability("")) }
-    var numWinners by remember { mutableStateOf(value = "0") }
-    var waitlistCapacity by remember { mutableStateOf("-1") }  //make it -1
-    var error by remember {mutableStateOf<String?>(null)}
-
+    var regPeriodValid by remember { mutableStateOf(false) }
     val message by vm.message.collectAsStateWithLifecycle()
+    var error by remember {mutableStateOf<String?>(null)}
 
     LaunchedEffect(Unit) { vm.clearMessage() }
 
@@ -83,31 +85,41 @@ fun LotteryRegistrationScreen(
         modifier = Modifier.fillMaxSize()
     ) {
 
-        item{ ScreenHeader(text = "Lottery Creation") }                 //'Lottery Settings' is for updating an already existing Lottery
-        if (campsites.isEmpty()) {
-            item { Text("You haven't published any campsites yet.") }
-        }
-        else {
-            item{
-                Text("Note: Selecting multiple campsites will have the following settings apply to all of the campsites selected. If you wish for campsites to have different lottery settings, make individual lotteries.", fontSize = 12.sp)
-                AppChecklistBox(label = "Campsites", items = campsites.map { it.name }, selectedItems = selectedCampsites, onSelectionChange = {
-                    selectedCampsites = it
-                })
-            }
-        }
+        item { ScreenHeader("Lottery Updating") }
 
+        //don't have to null check for empty campsite since this screen is only accessible for existing lotteries -> implies existing campsites
+        item{
+            val selectedCampsiteNames = campsites       //fetch names for display purposes
+                .filter { it.id in selectedCampsites }
+                .map { it.name }
+                .toSet()
+
+            AppChecklistBox(
+                label = "Add/Drop Campsites in Lottery",
+                items = campsites.map { it.name },
+
+                selectedItems = selectedCampsiteNames,      //display campsite names
+                onSelectionChange = { selectedNames ->      //dynamically update campsite IDs
+                    selectedCampsites = campsites
+                        .filter { it.name in selectedNames }
+                        .map { it.id }
+                        .toMutableSet()
+                    println(selectedCampsites)
+                }
+            )
+        }
 
         item{
             var openRegWindow by remember { mutableStateOf(false) }
             val interactionSource = remember { MutableInteractionSource() }
-            Column(
+            Column(     //HARD CODED COLUMN FOR CLICKABILITY INSTEAD OF PRE-MADE UI ASSET
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(LightGreen)
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null
                     ) {openRegWindow = true }
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
+            ){
                 Text(
                     text = "Registration Period (Lottery Window)",
                     style = MaterialTheme.typography.labelMedium,
@@ -117,28 +129,28 @@ fun LotteryRegistrationScreen(
                 Spacer(Modifier.height(4.dp))
                 Text("${registrationPeriod.startDate} to ${registrationPeriod.endDate}")
             }
+
             if (openRegWindow){
                 DateRangePickerModal(
                     minDate = LocalDate.now(),
                     maxDate = LocalDate.now().plusYears(1),
                     onDateRangeSelected = { valid, pair ->
-                    if (valid){
-                        val milsInADay = 86400000
-                        registrationPeriod = DateAvailability(
-                            startDate = formatter.format(Date(pair.first!! + milsInADay)),
-                            endDate = formatter.format(Date(pair.second!! + milsInADay))
+                        if (valid){
+                            val milsInADay = 86400000
+                            registrationPeriod = DateAvailability(
+                                startDate = formatter.format(Date(pair.first!! + milsInADay)),
+                                endDate = formatter.format(Date(pair.second!! + milsInADay))
                             )
-                        regPeriodValid = true
-                    }
-                    else{
-                        registrationPeriod = DateAvailability(startDate = "INVALID", endDate = "INVALID")
-                    }
-                },
+                            regPeriodValid = true
+                        }
+                        else{
+                            registrationPeriod = DateAvailability(startDate = "INVALID", endDate = "INVALID")
+                        }
+                    },
                     onDismiss = {openRegWindow = false}
                 )
             }
         }
-
         if (regPeriodValid){
             item{
                 var openBookWindow by remember { mutableStateOf(false) }
@@ -197,6 +209,7 @@ fun LotteryRegistrationScreen(
                 label = "Number of Winners"
             )
         }
+
         item{
             AppInputTextField(
                 value = waitlistCapacity,
@@ -204,6 +217,7 @@ fun LotteryRegistrationScreen(
                 label = "Waitlist Capacity (-1 for no capacity limit)"
             )
             Text("Winners are drawn automatically when registration closes", fontSize = 12.sp)
+
         }
 
         (error ?: message).let { text ->
@@ -217,9 +231,10 @@ fun LotteryRegistrationScreen(
         item{
             LargeButtonPrimary(text = "Save Lottery", onClick = {
                 //fetch corresponding campsite IDs of the Campsites chosen
-                val selectedSitesObjects = campsites.filter { it.name in selectedCampsites }
+                val selectedSitesObjects = campsites.filter { it.id in selectedCampsites }
+                println("sel: ${selectedSitesObjects}")
 
-                //validate the info
+                //validate the new info
                 error = when {
                     registrationPeriod.startDate.isBlank() || registrationPeriod.endDate.isBlank() || registrationPeriod.startDate == "INVALID" || registrationPeriod.endDate == "INVALID" -> "Enter a valid and complete registration date."
                     bookingPeriod.startDate.isBlank() || bookingPeriod.endDate.isBlank() || bookingPeriod.startDate == "INVALID" || bookingPeriod.endDate == "INVALID" -> "Enter a valid and complete booking date."
@@ -228,20 +243,24 @@ fun LotteryRegistrationScreen(
                     else -> null
                 }
 
-                //if all passes, then publish to firebase
+                //if all passes, UPDATE existing lottery in firebase
                 if (error == null){
-                    vm.callPublishLottery(
-                        campsiteIDs = selectedSitesObjects.map { it.id },
+                    vm.callUpdateLottery(
+                        lotteryID = targetLottery.id,
+                        newCampsiteIDs = selectedSitesObjects.map { it.id },
                         ownerID = placeholderOwnerId,
-                        registrationPeriod = registrationPeriod,
-                        bookingPeriod = bookingPeriod,
-                        maxWinners = numWinners.toInt(),
-                        capacity = if (waitlistCapacity.toInt() == -1) null else waitlistCapacity.toInt(),
-                        onDone = onDone
+                        newRegistrationPeriod = registrationPeriod,
+                        newBookingPeriod = bookingPeriod,
+                        newMaxWinners = numWinners.toInt(),
+                        newCapacity = if (waitlistCapacity.toInt() == -1) null else waitlistCapacity.toInt()
                     )
                 }
+
             })
         }
     }
-}
 
+
+
+
+}

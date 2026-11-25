@@ -30,6 +30,7 @@ import com.example.rl_v1.search.filterBy
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.newCoroutineContext
 
 /**
  * connects campsite and reservation screens to Firestore.
@@ -344,7 +345,6 @@ class CampsiteViewModel(
         bookingPeriod: DateAvailability,
         maxWinners: Int,
         capacity: Int?,
-        onDone: () -> Unit = {}
     ){
         viewModelScope.launch {
             try{
@@ -360,6 +360,33 @@ class CampsiteViewModel(
                 _message.value = "Could not publish: ${error.message}"
             }
         }
+    }
 
+    /** Called when Owner wishes to UPDATE an existing lottery */
+    fun callUpdateLottery(
+        lotteryID: String,
+        newCampsiteIDs: List<String>,
+        ownerID: String,
+        newRegistrationPeriod: DateAvailability,
+        newBookingPeriod: DateAvailability,
+        newMaxWinners: Int,
+        newCapacity: Int?
+    ){
+        viewModelScope.launch {
+            try{
+                lotteryRepo.updateLottery(
+                    Lottery(id=lotteryID,  campsiteIds = newCampsiteIDs, ownerId = userId, registrationPeriod = newRegistrationPeriod, bookingPeriod = newBookingPeriod, maxWinners = newMaxWinners, capacity = newCapacity)
+                    //Lottery(id="",  campsiteIds = campsiteIDs, ownerId = ownerID, registrationPeriod = registrationPeriod, bookingPeriod = bookingPeriod, maxWinners = maxWinners, capacity = capacity)
+                )
+
+                _message.value = "Updated Lottery"
+            }
+            catch (error: CancellationException){
+                throw error
+            } catch (error: Exception){
+                println(error)
+                _message.value = "Could not update: ${error.message}"
+            }
+        }
     }
 }

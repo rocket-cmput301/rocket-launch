@@ -23,8 +23,10 @@ import com.example.rl_v1.ui.theme.screens.explore.CampsiteSelectScreen
 import com.example.rl_v1.ui.theme.screens.explore.ExploreScreen
 import com.example.rl_v1.ui.theme.screens.explore.MakeFilterScreen
 import com.example.rl_v1.ui.theme.screens.inbox.InboxScreen
+import com.example.rl_v1.ui.theme.screens.owner.OwnerLotteryUpdateScreen
 import com.example.rl_v1.ui.theme.screens.owner.OwnerCampsitesScreen
 import com.example.rl_v1.ui.theme.screens.owner.OwnerLotteryListScreen
+import com.example.rl_v1.ui.theme.screens.owner.OwnerSelectedLotteryScreen
 import com.example.rl_v1.ui.theme.screens.profile.ProfileScreen
 import com.example.rl_v1.ui.theme.screens.reservation.ReservationConfirmedScreen
 import com.example.rl_v1.ui.theme.screens.reservation.SelectDatesScreen
@@ -155,11 +157,12 @@ fun AppNavHost(
                 onPublish = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
                 onEdit = { id -> navController.navigate("${Routes.OWNER_EDIT}/$id") },
                 onCreateLottery = { navController.navigate(Routes.LOTTERY_REGISTER)},
-                //onUpdateLottery -> lottery screen
-                onViewWaitlist = { lotId -> navController.navigate("${Routes.LOTTERY_WAITLIST}/$lotId") }
+                onViewWaitlist = { lotId -> navController.navigate("${Routes.LOTTERY_WAITLIST}/$lotId") },
+                onUpdate = { lotId -> navController.navigate("${Routes.LOTTERY_UPDATE}/$lotId")},
+                onViewDetails = {lotId -> navController.navigate("${Routes.LOTTERY_DETAILS}/$lotId") }
             )
         }
-        composable("${Routes.OWNER_EDIT}/{id}", arguments = idArgument) { entry ->
+        composable("${Routes.OWNER_EDIT}/{id}", arguments = idArgument) { entry ->      //campsite edit
             val id = entry.arguments?.getString("id")
             val mine by vm.ownerCampsites.collectAsStateWithLifecycle()
             val campsite = mine.firstOrNull { it.id == id }
@@ -175,9 +178,9 @@ fun AppNavHost(
         composable("${Routes.LOTTERY_WAITLIST}/{id}", arguments = idArgument) { lottery ->
             val id = lottery.arguments?.getString("id")
             val mine by vm.ownerOwnedLotteries.collectAsStateWithLifecycle()
-            val lottery = mine.firstOrNull {it.id == id}
+            val lottery = mine.firstOrNull { it.id == id }
 
-            if (lottery != null){
+            if (lottery != null) {
                 OwnerLotteryListScreen(
                     vm = vm,
                     lottery = lottery,
@@ -187,7 +190,43 @@ fun AppNavHost(
                     }
                 )
             }
-    }
+        }
+
+        composable("${Routes.LOTTERY_DETAILS}/{id}", arguments = idArgument){ lottery ->
+            val id = lottery.arguments?.getString("id")
+            val mine by vm.ownerOwnedLotteries.collectAsStateWithLifecycle()
+            val lotteryFound = mine.firstOrNull { it.id == id }
+
+            if (lotteryFound != null) {
+                OwnerSelectedLotteryScreen(
+                    vm = vm,
+                    lottery = lotteryFound,
+                    onBack = { navController.popBackStack() },
+                    onUpdate = { lotId -> navController.navigate("${Routes.LOTTERY_UPDATE}/$lotId")},
+                    onViewWaitlist = {lotId -> navController.navigate("${Routes.LOTTERY_WAITLIST}/$lotId")},
+                    onSend = {
+                        //TODO: send announcement (US 02.10.01)
+                    }
+                )
+            }
+        }
+
+        composable("${Routes.LOTTERY_UPDATE}/{id}", arguments = idArgument){ lottery ->
+            val id = lottery.arguments?.getString("id")
+            val mine by vm.ownerOwnedLotteries.collectAsStateWithLifecycle()
+            val lotteryFound = mine.firstOrNull { it.id == id }
+
+            if (lotteryFound != null){
+                OwnerLotteryUpdateScreen(
+                    vm = vm,
+                    targetLottery = lotteryFound,
+                    onBack = { navController.popBackStack() },
+                    onDone = { navController.popBackStack() },  //double check
+                )
+            }
+
+        }
+
 
         /* OTHER TABS
         -----------------------------------------------------------------------------------*/
