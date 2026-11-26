@@ -230,7 +230,7 @@ fun AppNavHost(
             )
 
         }
-        composable(BottomTab.Inbox.name) { InboxScreen() }
+        composable(BottomTab.Inbox.name) { InboxScreen(vm) }
         composable(BottomTab.Profile.name) {
             ProfileScreen(
                 onPublishCampsite = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
