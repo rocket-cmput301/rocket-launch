@@ -61,17 +61,23 @@ fun SelectDatesScreen(
 
     var selectedCampsite by remember (campsites) { mutableStateOf(campsites.firstOrNull()) }        //initialize selected campsite to the first one first
 
+    val site = selectedCampsite
+    if (site == null) {     // the won lottery's campsites haven't loaded yet
+        Column(Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
+            TextButton(onClick = onBack) { Text("Back") }
+            Text("Loading campsites...")
+        }
+        return
+    }
 
-    key(selectedCampsite?.id){      //change settings according to selected campsite
+    key(site.id){      //change settings according to selected campsite
 
         // The picker works in UTC midnight milliseconds.
         val todayUtc = remember {
             LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
         }
 
-        val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
-        val availableFrom = LocalDate.parse(selectedCampsite!!.availability!!.startDate, formatter)
-        val availableTo = LocalDate.parse(selectedCampsite!!.availability!!.endDate, formatter)
+        val (availableFrom, availableTo) = availableRange(site)
 
 
         val pickerState = rememberDateRangePickerState(
@@ -102,7 +108,7 @@ fun SelectDatesScreen(
         val guestCount = guests.trim().toIntOrNull()
         //val campsite = null
 
-        val guestsValid = guestCount != null && guestCount in 1..selectedCampsite!!.maxOccupancy
+        val guestsValid = guestCount != null && guestCount in 1..site.maxOccupancy
 
         Column(
             Modifier
@@ -115,7 +121,7 @@ fun SelectDatesScreen(
             TextButton(onClick = onBack) { Text("Back") }
             ScreenHeader("Select Dates")
 
-            DropdownBox(label = "CHOOSE CAMPSITE ↓", value = selectedCampsite!!.name ,items = campsites.map { it.name }, onItemSelected = { selectedName ->     //original header modified for multiple campsites (US 01.04.02)
+            DropdownBox(label = "CHOOSE CAMPSITE ↓", value = site.name ,items = campsites.map { it.name }, onItemSelected = { selectedName ->     //original header modified for multiple campsites (US 01.04.02)
                 selectedCampsite = campsites.find { it.name == selectedName }
             })
 
@@ -132,7 +138,7 @@ fun SelectDatesScreen(
             AppInputTextField(
                 value = guests,
                 onValueChange = { guests = it },
-                label = "Guests (up to ${selectedCampsite!!.maxOccupancy})",
+                label = "Guests (up to ${site.maxOccupancy})",
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
@@ -141,13 +147,13 @@ fun SelectDatesScreen(
                 nights == null -> "Check-out must be after check-in (at most 30 nights)"
                 else -> "$checkIn to $checkOut • ${nights.size} night" +
                         (if (nights.size == 1) "" else "s") +
-                        " • $" + String.format(Locale.US, "%.2f", nights.size * selectedCampsite!!.pricePerNight)
+                        " • $" + String.format(Locale.US, "%.2f", nights.size * site.pricePerNight)
             }
-            PrimaryTextBox(value = summary, label = "YOUR RESERVATION • " + priceText(selectedCampsite!!.pricePerNight))
+            PrimaryTextBox(value = summary, label = "YOUR RESERVATION • " + priceText(site.pricePerNight))
 
             // Show the campsite's rules and policies so the entrant can read them before booking.
-            PrimaryTextBox(value = rulesToShow(selectedCampsite!!), label = "CAMPSITE RULES")
-            PrimaryTextBox(value = policyToShow(selectedCampsite!!), label = "CANCELLATION POLICY")
+            PrimaryTextBox(value = rulesToShow(site), label = "CAMPSITE RULES")
+            PrimaryTextBox(value = policyToShow(site), label = "CANCELLATION POLICY")
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
@@ -164,7 +170,7 @@ fun SelectDatesScreen(
                 enabled = canConfirmReservation(nights != null, guestsValid, agreedToRules),
                 onClick = {
                     if (checkIn != null && checkOut != null && guestCount != null) {
-                        onConfirm(selectedCampsite!!,checkIn, checkOut, guestCount)
+                        onConfirm(site,checkIn, checkOut, guestCount)
                     }
                 }
             )
@@ -196,3 +202,14 @@ fun canConfirmReservation(datesValid: Boolean, guestsValid: Boolean, agreedToRul
 /** UTC midnight milliseconds from the picker to "2027-05-07". */
 private fun toIsoDate(utcMillis: Long): String =
     Instant.ofEpochMilli(utcMillis).atZone(ZoneOffset.UTC).toLocalDate().toString()
+
+/**
+ * The first and last day [campsite] can be booked.
+ * Campsites published before availability existed, or with dates that don't parse, have no limit.
+ */
+fun availableRange(campsite: Campsite): Pair<LocalDate, LocalDate> {
+    val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+    fun parse(text: String?) = text?.let { runCatching { LocalDate.parse(it, formatter) }.getOrNull() }
+    return (parse(campsite.availability?.startDate) ?: LocalDate.MIN) to
+        (parse(campsite.availability?.endDate) ?: LocalDate.MAX)
+}
