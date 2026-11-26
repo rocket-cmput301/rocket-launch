@@ -73,6 +73,13 @@ class FakeReservationRepository(reservations: List<Reservation>) : ReservationRe
         reservations.value = updated
         return Result.success(Unit)
     }
+
+    override suspend fun cancel(reservationId: String, entrantId: String): Result<Unit> {
+        reservations.value = reservations.value.map {
+            if (it.id == reservationId) it.copy(status = "cancelled") else it
+        }
+        return Result.success(Unit)
+    }
 }
 
 class FakeLotteryRepository: LotteryRepository{

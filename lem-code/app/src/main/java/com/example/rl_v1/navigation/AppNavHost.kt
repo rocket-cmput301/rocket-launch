@@ -120,14 +120,24 @@ fun AppNavHost(
             val id = entry.arguments?.getString("id")
             val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
             val all by vm.allCampsites.collectAsStateWithLifecycle()
+            val message by vm.message.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) { vm.clearMessage() }
             val reservation = reservations.firstOrNull { it.id == id }
             val campsiteName = all.firstOrNull { it.id == reservation?.campsiteId }?.name ?: "Campsite"
 
             ReservationConfirmedScreen(
                 reservation = reservation,
                 campsiteName = campsiteName,
+                canCancel = reservation != null && vm.canCancel(reservation),
+                onCancel = { reservation?.let { vm.cancel(it) } },
+                message = message,
                 onDone = {
-                    navController.popBackStack(BottomTab.Explore.name, inclusive = false)
+                    // opened from the Activity list: go back there; right after booking: go to Explore
+                    if (navController.previousBackStackEntry?.destination?.route == BottomTab.Activity.name) {
+                        navController.popBackStack()
+                    } else {
+                        navController.popBackStack(BottomTab.Explore.name, inclusive = false)
+                    }
                 }
             )
         }
@@ -232,10 +242,14 @@ fun AppNavHost(
         -----------------------------------------------------------------------------------*/
         composable(BottomTab.Activity.name) {                                       //whole block modified for multi-campsite lotteries
             val allLots = vm.userWonLotteries.collectAsStateWithLifecycle()
-            ActivityScreen(vm, onBook = { lotteryId ->
-                val correspondingLottery = allLots.value.find { it.id == lotteryId }        //should only ever be 1 lottery; said 1 lottery can hold many campsites though
-                navController.navigate("${Routes.SELECT_DATES}/${correspondingLottery?.id}")
-            })
+            ActivityScreen(
+                vm,
+                onBook = { lotteryId ->
+                    val correspondingLottery = allLots.value.find { it.id == lotteryId }        //should only ever be 1 lottery; said 1 lottery can hold many campsites though
+                    navController.navigate("${Routes.SELECT_DATES}/${correspondingLottery?.id}")
+                },
+                onOpenReservation = { id -> navController.navigate("${Routes.RESERVATION_CONFIRMED}/$id") }
+            )
 
         }
         composable(BottomTab.Inbox.name) { InboxScreen() }

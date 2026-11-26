@@ -19,14 +19,14 @@ class SelectDatesScreenTest {
     val composeRule = createComposeRule()
 
     @Test fun showsTheRulesAndPolicy() {
-        composeRule.setContent { SelectDatesScreen(hintonPines, null, onBack = {}, onConfirm = { _, _, _ -> }) }
+        composeRule.setContent { SelectDatesScreen(listOf(hintonPines), null, onBack = {}, onConfirm = { _, _, _, _ -> }) }
 
         composeRule.onNodeWithText("Quiet hours 10 pm to 7 am").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Free cancellation up to 7 days before").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun checkboxCanBeTicked() {
-        composeRule.setContent { SelectDatesScreen(hintonPines, null, onBack = {}, onConfirm = { _, _, _ -> }) }
+        composeRule.setContent { SelectDatesScreen(listOf(hintonPines), null, onBack = {}, onConfirm = { _, _, _, _ -> }) }
 
         val checkbox = composeRule.onNode(isToggleable())
         checkbox.performScrollTo()
@@ -36,7 +36,7 @@ class SelectDatesScreenTest {
     }
 
     @Test fun confirmIsDisabledWithoutDates() {
-        composeRule.setContent { SelectDatesScreen(hintonPines, null, onBack = {}, onConfirm = { _, _, _ -> }) }
+        composeRule.setContent { SelectDatesScreen(listOf(hintonPines), null, onBack = {}, onConfirm = { _, _, _, _ -> }) }
 
         // Even after agreeing to the rules, no dates are picked yet.
         composeRule.onNode(isToggleable()).performScrollTo().performClick()

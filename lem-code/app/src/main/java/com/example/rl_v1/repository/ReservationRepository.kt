@@ -29,4 +29,7 @@ interface ReservationRepository {
     // suspend = function that has to wait on something slow
     /** Rejects a reservation on one of [ownerId]'s campsites and frees its nights. */
     suspend fun reject(reservationId: String, ownerId: String): Result<Unit>
+
+    /** Cancels one of [entrantId]'s reservations before check-in and frees its nights. */
+    suspend fun cancel(reservationId: String, entrantId: String): Result<Unit>
 }

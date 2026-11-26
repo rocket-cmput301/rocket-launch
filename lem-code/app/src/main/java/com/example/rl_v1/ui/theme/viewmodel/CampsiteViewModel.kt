@@ -14,6 +14,7 @@ import com.example.rl_v1.repository.FirestoreLotteryRepository
 import com.example.rl_v1.repository.FirestoreReservationRepository
 import com.example.rl_v1.repository.LotteryRepository
 import com.example.rl_v1.repository.ReservationRepository
+import com.example.rl_v1.repository.cancelError
 import com.example.rl_v1.repository.stayNights
 import com.example.rl_v1.search.search
 import com.google.firebase.auth.FirebaseAuth
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.rl_v1.search.filterBy
+import java.time.LocalDate
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.callbackFlow
@@ -257,6 +259,23 @@ class CampsiteViewModel(
         }
     }
 
+    /** True if the current user can still cancel [reservation]. */
+    fun canCancel(reservation: Reservation): Boolean =
+        cancelError(reservation, userId, LocalDate.now().toString()) == null
+
+    /** cancels one of the current user's reservations. */
+    fun cancel(reservation: Reservation) {
+        _message.value = "Cancelling..."
+        viewModelScope.launch {
+            val result = reservationRepo.cancel(reservation.id, userId)
+            if (result.isSuccess) {
+                _message.value = "Reservation cancelled"
+            } else {
+                _message.value = "Could not cancel: ${result.exceptionOrNull()?.message}"
+            }
+        }
+    }
+
     /** clears the screens feedback message  */
     fun clearMessage() {
         _message.value = null
@@ -324,7 +343,8 @@ class CampsiteViewModel(
     fun callViewOwnerWaitlistEntries(lotteryID: String, ownerID: String): Flow<List<WaitlistEntry>> {
         return lotteryRepo.observeWaitlistUsersByOwner(
             lotteryId = lotteryID,
-            ownerId = "8bkEYENWDCWqz4mRcdTnWGeLmbv2"
+            ownerId = "8bkEYENWDCWqz4mRcdTnWGeLmbv2"    //test
+            //ownerId = userId                          //actual; waiting for roles
         )
     }
 
