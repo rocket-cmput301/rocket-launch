@@ -83,7 +83,8 @@ class FirestoreLotteryRepository(
                 // TODO: notify the user they are already in the lottery via UI: banner pop-up notification maybe?
             }
             else{
-                waitlistEntries.add(newEntry)
+                // one fixed id per entrant and lottery, so a double tap writes the same entry instead of a second one
+                waitlistEntries.document("${lotteryId}_$entrantId").set(newEntry).await()
                 // TODO: notify the user of successful join via UI: banner pop-up notification? or switch to Activity Screen? (US 01.03.01)
             }
 
@@ -174,7 +175,7 @@ class FirestoreLotteryRepository(
                     }
                 }
                 else -> emptyList()
-            }
+            }.distinctBy { it.id }  // an entrant with two entries in one lottery would list it twice and crash the Activity list
         }
     }
 
