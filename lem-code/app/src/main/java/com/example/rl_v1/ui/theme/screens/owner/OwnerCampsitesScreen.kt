@@ -1,6 +1,5 @@
 package com.example.rl_v1.ui.theme.screens.owner
 
-import android.preference.PreferenceActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import com.example.rl_v1.ui.theme.components.SmallButtonPrimary
@@ -27,11 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.rl_v1.model.Reservation
-import com.example.rl_v1.model.Campsite
-import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.ui.theme.components.CampsiteCard
 import com.example.rl_v1.ui.theme.components.Header1
-import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.components.PrimaryClickableText
 import com.example.rl_v1.ui.theme.components.PrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
@@ -203,6 +199,7 @@ fun OwnerCampsitesScreen(
                 label = label
             )
         }
+        }
     }
 }
 
@@ -276,5 +273,4 @@ fun bookedDatesFor(campsiteId: String, reservations: List<Reservation>): String 
         text += "${reservation.checkInDate} to ${reservation.checkOutDate}"
     }
     return text
-    }
 }
