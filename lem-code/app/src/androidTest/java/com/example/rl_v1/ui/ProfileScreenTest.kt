@@ -1,5 +1,6 @@
 package com.example.rl_v1.ui
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -20,5 +21,16 @@ class ProfileScreenTest {
         composeRule.onNodeWithText("Publish a campsite").performClick()
 
         assertTrue(clicked)
+    }
+
+    @Test fun policiesOpenAndClose() {
+        composeRule.setContent { ProfileScreen() }
+
+        composeRule.onNodeWithText("App Policies & Guidelines").performClick()
+        composeRule.onNodeWithText("Policies and Guidelines").assertIsDisplayed()
+        composeRule.onNodeWithText("Respect other campers").assertIsDisplayed()
+
+        composeRule.onNodeWithText("Close").performClick()
+        composeRule.onNodeWithText("Policies and Guidelines").assertDoesNotExist()
     }
 }
