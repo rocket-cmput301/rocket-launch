@@ -24,7 +24,15 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.random.Random
 import kotlin.reflect.typeOf
+
+/** Shuffles [waiting] and splits it into (winners, losers), with at most [maxWinners] winners. */
+fun <T> drawLottery(waiting: List<T>, maxWinners: Int, random: Random = Random.Default): Pair<List<T>, List<T>> {
+    val shuffled = waiting.shuffled(random)
+    val count = maxWinners.coerceAtLeast(0)
+    return shuffled.take(count) to shuffled.drop(count)
+}
 
 class FirestoreLotteryRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -75,7 +83,8 @@ class FirestoreLotteryRepository(
                 // TODO: notify the user they are already in the lottery via UI: banner pop-up notification maybe?
             }
             else{
-                waitlistEntries.add(newEntry)
+                // one fixed id per entrant and lottery, so a double tap writes the same entry instead of a second one
+                waitlistEntries.document("${lotteryId}_$entrantId").set(newEntry).await()
                 // TODO: notify the user of successful join via UI: banner pop-up notification? or switch to Activity Screen? (US 01.03.01)
             }
 
@@ -166,7 +175,7 @@ class FirestoreLotteryRepository(
                     }
                 }
                 else -> emptyList()
-            }
+            }.distinctBy { it.id }  // an entrant with two entries in one lottery would list it twice and crash the Activity list
         }
     }
 
@@ -197,48 +206,36 @@ class FirestoreLotteryRepository(
         TODO("Not yet implemented")
     }
 
+    /**
+     * Draws [lotteryId]: winners become WON (US 01.03.01) and everyone else still waiting becomes TERMINATED (US 01.03.02).
+     * Entrants are notified by these statuses: their Activity tab and Inbox listen to their waitlist entries.
+     * Returns the number of winners.
+     */
     override suspend fun selectWinners(lotteryId: String): Int {
         val chosenLottery = lotteries.document(lotteryId).get().await().toObject(Lottery::class.java)
-        val thisLotteryEntries = waitlistEntries                                                          //get a pool of all the WaitlistEntries for this lottery
+            ?: error("Lottery $lotteryId not found")
+        // only entries still in the draw, so drawing again can't re-pick a winner or a loser
+        val waiting = waitlistEntries
             .whereEqualTo("lotteryId", lotteryId)
+            .whereEqualTo("status", "WAITING")
             .get()
             .await()
+            .documents
+        val (winners, losers) = drawLottery(waiting, chosenLottery.maxWinners)
 
-        val winners = thisLotteryEntries.shuffled().take(chosenLottery?.maxWinners!!)                //select the winners randomly
-        var usersGranted: Int = 0
-        for (winner in winners){
-            //winner.toObject(WaitlistEntry::class.java).status = "WON"
-            winner.reference.update("status", "WON").await()            //grant the corresponding winning User permission to make a reservation
+        // One batch, so every entry changes together or none do.
+        // shortcut: a batch holds 500 writes; split it if a lottery ever has more than 500 waiting entrants.
+        val batch = firestore.batch()
+        for (winner in winners) batch.update(winner.reference, "status", "WON")
+        for (loser in losers) batch.update(loser.reference, "status", "TERMINATED")
+        batch.commit().await()
 
-
-            val winningUserID = winner.toObject(WaitlistEntry::class.java).entrantId
-            //TODO: notify each winner of their lottery win (via notification? via inbox?)
-
-            //if User is successfully notified and granted permissions
-            usersGranted +=1
-            println("Updated ${winner.id} to WON")
-        }
-
-        //TODO: notify all other Users that they lost the lottery (US 01.03.02)
-        notifyLosers()
-
-        return usersGranted
+        return winners.size
     }
 
     /*
     EXTERNAL FUNCTIONS ----------
      */
-
-    /**
-     *  Notifies all losers of a lottery that they lost the lottery & changes the status of their WaitlistEntry from 'WAITING' -> 'TERMINATED'
-     *
-     *  Called within selectWinners
-     *
-     *  @returns nothing
-     */
-    suspend fun notifyLosers(){
-
-    }
 
     /**
      *  Extension function that updates a Lottery's status and returns a boolean on if it is still possible to join
