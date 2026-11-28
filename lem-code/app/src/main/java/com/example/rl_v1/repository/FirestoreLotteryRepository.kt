@@ -24,13 +24,42 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.random.Random
 import kotlin.reflect.typeOf
+
+/** Shuffles [waiting] and splits it into (winners, losers), with at most [maxWinners] winners. */
+fun <T> drawLottery(waiting: List<T>, maxWinners: Int, random: Random = Random.Default): Pair<List<T>, List<T>> {
+    val shuffled = waiting.shuffled(random)
+    val count = maxWinners.coerceAtLeast(0)
+    return shuffled.take(count) to shuffled.drop(count)
+}
 
 class FirestoreLotteryRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ): LotteryRepository {
     private val lotteries = firestore.collection("lotteries")
     private val waitlistEntries = firestore.collection("waitlistEntries")   //almost implemented
+
+    /** Saves a new Lottery and returns it with its generated document ID */
+    override suspend fun publishLottery(lottery: Lottery): Lottery {
+        //require( what we want ) { what shows if the condition we want is not met }
+        require(lottery.id.isBlank()) { "This lottery already exists, update instead." }
+        require(lottery.ownerId.isNotBlank()) { "An owner is required" }
+        require(lottery.campsiteIds.isNotEmpty()) { "No campsites have been selected for this lottery." }
+        require(lottery.registrationPeriod.startDate.isNotEmpty() && lottery.registrationPeriod.endDate.isNotEmpty()) { "Registration Period invalid." }
+        require(lottery.bookingPeriod.startDate.isNotEmpty() && lottery.bookingPeriod.endDate.isNotEmpty()) { "Booking period invalid." }
+        require(lottery.maxWinners > 0) { "Requires positive (>0) number of lottery winners" }
+
+        val document = lotteries.document()
+        val savedLottery = lottery.copy(id = document.id)
+
+        document.set(savedLottery).await()
+        return savedLottery
+    }
+
+    override suspend fun updateLottery(lottery: Lottery) {
+        TODO("Not yet implemented")
+    }
 
     override suspend fun joinWaitlist(lotteryId: String, entrantId: String): Unit {
         val chosenLottery = lotteries.document(lotteryId)
@@ -54,7 +83,8 @@ class FirestoreLotteryRepository(
                 // TODO: notify the user they are already in the lottery via UI: banner pop-up notification maybe?
             }
             else{
-                waitlistEntries.add(newEntry)
+                // one fixed id per entrant and lottery, so a double tap writes the same entry instead of a second one
+                waitlistEntries.document("${lotteryId}_$entrantId").set(newEntry).await()
                 // TODO: notify the user of successful join via UI: banner pop-up notification? or switch to Activity Screen? (US 01.03.01)
             }
 
@@ -145,7 +175,7 @@ class FirestoreLotteryRepository(
                     }
                 }
                 else -> emptyList()
-            }
+            }.distinctBy { it.id }  // an entrant with two entries in one lottery would list it twice and crash the Activity list
         }
     }
 
@@ -176,37 +206,47 @@ class FirestoreLotteryRepository(
         TODO("Not yet implemented")
     }
 
+    /**
+     * Draws [lotteryId]: winners become WON (US 01.03.01) and everyone else still waiting becomes TERMINATED (US 01.03.02).
+     * Entrants are notified by these statuses: their Activity tab and Inbox listen to their waitlist entries.
+     * Returns the number of winners.
+     */
     override suspend fun selectWinners(lotteryId: String): Int {
         val chosenLottery = lotteries.document(lotteryId).get().await().toObject(Lottery::class.java)
-        val thisLotteryEntries = waitlistEntries                                                          //get a pool of all the WaitlistEntries for this lottery
+            ?: error("Lottery $lotteryId not found")
+        // only entries still in the draw, so drawing again can't re-pick a winner or a loser
+        val waiting = waitlistEntries
             .whereEqualTo("lotteryId", lotteryId)
+            .whereEqualTo("status", "WAITING")
             .get()
             .await()
+            .documents
+        val (winners, losers) = drawLottery(waiting, chosenLottery.maxWinners)
 
-        val winners = thisLotteryEntries.shuffled().take(chosenLottery?.maxWinners!!)                //select the winners randomly
-        var usersGranted: Int = 0
-        for (winner in winners){
-            //winner.toObject(WaitlistEntry::class.java).status = "WON"
-            winner.reference.update("status", "WON").await()            //grant the corresponding winning User permission to make a reservation
+        // One batch, so every entry changes together or none do.
+        // shortcut: a batch holds 500 writes; split it if a lottery ever has more than 500 waiting entrants.
+        val batch = firestore.batch()
+        for (winner in winners) batch.update(winner.reference, "status", "WON")
+        for (loser in losers) batch.update(loser.reference, "status", "TERMINATED")
+        batch.commit().await()
 
-
-            val winningUserID = winner.toObject(WaitlistEntry::class.java).entrantId
-            //TODO: notify each winner of their lottery win (via notification? via inbox?)
-
-            //if User is successfully notified and granted permissions
-            usersGranted +=1
-            println("Updated ${winner.id} to WON")
-        }
-
-        //TODO: notify all other Users that they lost the lottery (US 01.03.02)
-
-        return usersGranted
+        return winners.size
     }
 
     /*
     EXTERNAL FUNCTIONS ----------
      */
 
+    /**
+     *  Extension function that updates a Lottery's status and returns a boolean on if it is still possible to join
+     *
+     *  Defined here in LotteryRepository to preserve Lottery as a data class
+     *  Currently checks eligibility by:
+     *      - lottery size has less than lottery capacity
+     *      - current date is within the registration period
+     *
+     *  @returns Boolean : true if the lottery is still eligible to join false otherwise
+     */
     override suspend fun updateAndCheckStatus(lotteryDocument: DocumentReference): Boolean{
         val entryCount = waitlistEntries
             .whereEqualTo("lotteryId",lotteryDocument.id)    //find matching lotteries
@@ -257,7 +297,7 @@ class FirestoreLotteryRepository(
      *
      *  @returns nothing
      */
-    override suspend fun declineOpportunity(lotteryID: String, entrantID: String){
+    override suspend fun declineOpportunity(lotteryID: String, entrantID: String): Unit{
         val chosenEntry = waitlistEntries                                                    //fetch the winning entry
             .whereEqualTo("lotteryId", lotteryID)
             .whereEqualTo("entrantId", entrantID)
@@ -268,7 +308,7 @@ class FirestoreLotteryRepository(
             if (entry.toObject(WaitlistEntry::class.java)?.status == "WON"){    //check if its a winning entry (it should be)
                 entry.reference.update("status","TERMINATED").await()       //only then, change it to terminated
 
-                //OPTIONALLY let the User provide a reason -- (US
+                //OPTIONALLY let the User provide a reason
             }
             else{
                 println("$entry is not a winning entry!")

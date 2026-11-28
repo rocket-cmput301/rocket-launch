@@ -2,6 +2,7 @@ package com.example.rl_v1.ui.theme.screens.activity
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,19 +27,33 @@ import com.example.rl_v1.ui.theme.components.ScreenHeader
 import com.example.rl_v1.ui.theme.components.SecondaryTextBox
 import com.example.rl_v1.ui.theme.components.SmallButtonPrimary
 import com.example.rl_v1.ui.theme.theme.DarkGreen
+import com.example.rl_v1.repository.isPast
 import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
+import java.time.LocalDate
 import java.util.Locale
 import androidx.compose.runtime.remember
 
 /** Activity tab: the user's reservations, and placeholder lottery cards. */
 @Composable
-fun ActivityScreen(vm: CampsiteViewModel){
+fun ActivityScreen(
+    vm: CampsiteViewModel,
+    onBook: (String) -> Unit = {},
+    onOpenReservation: (String) -> Unit = {}
+){
     var showReservations by rememberSaveable { mutableStateOf(false) }
+    var reservationFilter by rememberSaveable { mutableStateOf("All") }
     val reservations by vm.entrantReservations.collectAsStateWithLifecycle()
     val campsites by vm.allCampsites.collectAsStateWithLifecycle()
     val joinedLotteries by vm.userJoinedLotteries.collectAsStateWithLifecycle()
     val selectedLotteries by vm.userWonLotteries.collectAsStateWithLifecycle()       //haven't been implemented yet
     val notSelectedLotteries by vm.userLostLotteries.collectAsStateWithLifecycle()   //haven't been implemented yet
+
+    val today = LocalDate.now().toString()
+    val shownReservations = when (reservationFilter) {
+        "Active" -> reservations.filter { !isPast(it, today) }
+        "Past" -> reservations.filter { isPast(it, today) }
+        else -> reservations
+    }
 
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -60,17 +75,39 @@ fun ActivityScreen(vm: CampsiteViewModel){
 
         }
         if (showReservations) {
-            if (reservations.isEmpty()) {
-                item { Text("You have no reservations yet.") }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    for (option in listOf("All", "Active", "Past")) {
+                        SmallButtonPrimary(
+                            text = option,
+                            onClick = { reservationFilter = option },
+                            dark = reservationFilter == option
+                        )
+                    }
+                }
             }
-            items(reservations, key = { it.id }) { reservation ->
+            if (shownReservations.isEmpty()) {
+                item {
+                    Text(
+                        if (reservationFilter == "All") "You have no reservations yet."
+                        else "You have no ${reservationFilter.lowercase()} reservations."
+                    )
+                }
+            }
+            items(shownReservations, key = { it.id }) { reservation ->
                 val name = campsites.firstOrNull { it.id == reservation.campsiteId }?.name ?: "Campsite"
-                PrimaryTextBox(
-                    value = "${reservation.checkInDate} to ${reservation.checkOutDate} • " +
-                            "${reservation.numberOfGuests} guests • $" +
-                            String.format(Locale.US, "%.2f", reservation.totalPrice),
-                    label = "${reservation.status.uppercase()} • ${name.uppercase()}"
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PrimaryTextBox(
+                        value = "${reservation.checkInDate} to ${reservation.checkOutDate} • " +
+                                "${reservation.numberOfGuests} guests • $" +
+                                String.format(Locale.US, "%.2f", reservation.totalPrice),
+                        label = "${reservation.status.uppercase()} • ${name.uppercase()}"
+                    )
+                    SmallButtonPrimary(
+                        text = "Open reservation",
+                        onClick = { onOpenReservation(reservation.id) }
+                    )
+                }
             }
         } else {
             if (selectedLotteries.isEmpty()){
@@ -80,25 +117,39 @@ fun ActivityScreen(vm: CampsiteViewModel){
             }
             else{
                 items(selectedLotteries, key = {it.id}) { lottery ->
+                    var confirmDecline by remember {mutableStateOf(false)}
                     val correspondingCampsite = campsites.filter { it.id in lottery.campsiteIds }
                     PrimaryTextBox(
-                        value = "You can book now. Choose remaining dates by ${lottery.registrationPeriod.endDate}",
+                        value = "You can book now. Choose remaining dates before ${lottery.bookingPeriod.endDate}.",
                         label = "SELECTED • ${correspondingCampsite.joinToString { it.name }}",
                         Modifier.fillMaxSize().padding(bottom = 8.dp),
                     )
                     LargeButtonPrimary(
                         "Choose campsite & dates",
-                        onClick = {
-                            //TODO: prompt the same 'Select Dates' button from CampsiteDetailsScreen.kt (US 01.04.01 and US 01.04.02)
-                        })
-                    PrimaryClickableText(
-                        text = "Decline Opportunity",
-                        textColor = DarkGreen,
-                        onClick = {
-                            vm.callDeclineOp(campID = lottery.campsiteIds[0])              //set status to 'TERMINATED' after a confirmation (US 01.04.03)
-                        },
-                        modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        onClick = { onBook(lottery.id) }                            //prompt the same 'Select Dates' button from CampsiteDetailsScreen.kt (US 01.04.01 and US 01.04.02)
                     )
+                    if (confirmDecline){
+                        PrimaryClickableText(
+                            text = "Cancel Decline",
+                            textColor = DarkGreen,
+                            onClick = { confirmDecline = false },
+                            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        )
+                        PrimaryClickableText(
+                            text = "Confirm Decline",
+                            textColor = DarkGreen,
+                            onClick = { vm.callDeclineOp(campID = lottery.campsiteIds[0]) },              //set status to 'TERMINATED' after a confirmation (US 01.04.03)
+                            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        )
+                    }
+                    else{
+                        PrimaryClickableText(
+                            text = "Decline Opportunity",
+                            textColor = DarkGreen,
+                            onClick = { confirmDecline = true },
+                            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                        )
+                    }
                 }
             }
 

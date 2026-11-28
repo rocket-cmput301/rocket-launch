@@ -12,6 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,9 +36,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Dialog
 import com.example.rl_v1.model.SharedPrefsDeviceIdProvider
 import com.example.rl_v1.model.UserProfile
@@ -44,8 +54,10 @@ import com.example.rl_v1.ui.theme.components.LargeButtonPrimary
 import com.example.rl_v1.ui.theme.components.LargeButtonSecondary
 import com.example.rl_v1.ui.theme.components.PoliciesDialog
 import com.example.rl_v1.ui.theme.components.PrimaryClickableText
+import com.example.rl_v1.ui.theme.components.PrimaryTextBox
 import com.example.rl_v1.ui.theme.components.ScreenHeader
 import com.example.rl_v1.ui.theme.theme.Forest
+import com.example.rl_v1.ui.theme.theme.GreyGreen
 import com.example.rl_v1.ui.theme.viewmodel.ensureFirebaseSession
 import kotlinx.coroutines.launch
 
@@ -54,12 +66,23 @@ private enum class HostingDestination {
     MANAGE
 }
 
+/**
+ * App policies and guidelines shown from the Profile tab, as (section title, rules).
+ * shortcut: shipped with the app, so changes reach users on the next app update; move to Firestore if they must change without a release.
+ */
+val APP_POLICIES = listOf(
+    "Respect other campers" to "Keep your reviews and messages respectful.\nDo not post harassment or personal information.",
+    "Reservations" to "Joining a lottery does not reserve dates.\nSelected entrants choose from the remaining dates.",
+    "Your profile" to "Update your details or delete your profile in Profile settings."
+)
+
 /** Profile tab, with buttons to publish and manage campsites and edit profile settings. */
 @Composable
 fun ProfileScreen(
     profile: UserProfile? = null,
     onPublishCampsite: () -> Unit = {},
     onManageCampsites: () -> Unit = {},
+    onRegisterLottery: () -> Unit = {},
     onEditProfilePicture: () -> Unit = {},
     onEditPersonalInformation: () -> Unit = {},
     onEditPreferences: () -> Unit = {}, // TODO: no preferences screen yet
@@ -67,7 +90,7 @@ fun ProfileScreen(
     onSaveProfile: () -> Unit = {},
     onDeleteProfile: () -> Unit = {},
     modifier: Modifier = Modifier
-) {
+){
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val deviceIdProvider = remember { SharedPrefsDeviceIdProvider(context) }
@@ -89,6 +112,34 @@ fun ProfileScreen(
     } else {
         "Notifications: Off"
     }
+
+//    if (showPolicies) {
+//        // Built from app colours, not AlertDialog: the theme's dynamic colour would tint a stock dialog.
+//        Dialog(onDismissRequest = { showPolicies = false }) {
+//            Surface(shape = RoundedCornerShape(24.dp), color = Color.White) {
+//                Column(
+//                    verticalArrangement = Arrangement.spacedBy(12.dp),
+//                    modifier = Modifier
+//                        .padding(24.dp)
+//                        .verticalScroll(rememberScrollState())
+//                ) {
+//                    Text(
+//                        "Policies and Guidelines",
+//                        style = MaterialTheme.typography.titleLarge,
+//                        fontWeight = FontWeight.Bold,
+//                        color = Forest
+//                    )
+//                    for ((title, rules) in APP_POLICIES) {
+//                        Column {
+//                            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Forest)
+//                            Text(rules, style = MaterialTheme.typography.bodyMedium, color = GreyGreen)
+//                        }
+//                    }
+//                    LargeButtonSecondary("Close", onClick = { showPolicies = false })
+//                }
+//            }
+//        }
+//    }
 
     fun navigateToHostingDestination(destination: HostingDestination) {
         when (destination) {
@@ -134,7 +185,6 @@ fun ProfileScreen(
             }
         }
     }
-
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(16.dp),
@@ -157,6 +207,13 @@ fun ProfileScreen(
                 onClick = { handleHostingActionClick(HostingDestination.PUBLISH) }
             )
         }
+        item {
+            LargeButtonPrimary("Register Lottery", onClick = onRegisterLottery)
+        }/*
+        item{
+            LargeButtonPrimary("Update Lottery", onClick = onUpdateLottery)
+        }
+        */
         item {
             LargeButtonSecondary(
                 "Manage my campsites",

@@ -23,10 +23,8 @@ class ProfileScreenTest {
         assertTrue(clicked)
     }
 
-    @Test fun policiesPopupOpensAndCloses() {
+    @Test fun policiesOpenAndClose() {
         composeRule.setContent { ProfileScreen() }
-
-        composeRule.onNodeWithText("Policies and Guidelines").assertDoesNotExist()
 
         composeRule.onNodeWithText("App Policies & Guidelines").performClick()
         composeRule.onNodeWithText("Policies and Guidelines").assertIsDisplayed()

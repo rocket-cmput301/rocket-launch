@@ -12,6 +12,7 @@ import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
 import com.google.firebase.firestore.DocumentReference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 
 /** Keeps campsites in a list instead of Firestore, so UI tests don't need the internet. */
 class FakeCampsiteRepository(campsites: List<Campsite>) : CampsiteRepository {
@@ -73,9 +74,28 @@ class FakeReservationRepository(reservations: List<Reservation>) : ReservationRe
         reservations.value = updated
         return Result.success(Unit)
     }
+
+    override suspend fun cancel(reservationId: String, entrantId: String): Result<Unit> {
+        reservations.value = reservations.value.map {
+            if (it.id == reservationId) it.copy(status = "cancelled") else it
+        }
+        return Result.success(Unit)
+    }
 }
 
-class FakeLotteryRepository: LotteryRepository{
+/** Returns fixed lists for the lotteries the user won and lost; the rest isn't faked yet. */
+class FakeLotteryRepository(
+    private val won: List<Lottery> = emptyList(),
+    private val lost: List<Lottery> = emptyList()
+): LotteryRepository{
+    override suspend fun publishLottery(lottery: Lottery): Lottery {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateLottery(lottery: Lottery) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun joinWaitlist(lotteryId: String, entrantId: String) {
         TODO("Not yet implemented")
     }
@@ -88,12 +108,17 @@ class FakeLotteryRepository: LotteryRepository{
         TODO("Not yet implemented")
     }
 
+    // the view model calls this when it's created, so it must not throw
     override fun observeLotteriesByUser(
         userId: String,
         type: String
-    ): Flow<List<Lottery>> {
-        TODO("Not yet implemented")
-    }
+    ): Flow<List<Lottery>> = flowOf(
+        when (type) {
+            "Selected" -> won
+            "Not Selected" -> lost
+            else -> emptyList()
+        }
+    )
 
     override fun observeAllLotteries(): Flow<List<Lottery>> {
         TODO("Not yet implemented")
@@ -174,5 +199,5 @@ fun fakeViewModel(
     reservations: FakeReservationRepository = FakeReservationRepository(emptyList()),
     lotteries: FakeLotteryRepository = FakeLotteryRepository()
 ): CampsiteViewModel {
-    return CampsiteViewModel(campsites, reservations, lotteries)
+    return CampsiteViewModel(campsites, reservations, lotteries, userId = "test-user")
 }
