@@ -117,6 +117,37 @@ object ImageCropper {
     }
 
     /**
+     * Square region, in source pixels, of a [width] x [height] image that is visible in the circle
+     * for the given framing. Always lies inside the image.
+     */
+    fun cropRegion(
+        width: Int,
+        height: Int,
+        zoom: Float,
+        offsetX: Float,
+        offsetY: Float
+    ): CropRegion {
+        val shorter = min(width, height).toFloat()
+        val side = (shorter / zoom).coerceIn(1f, shorter)
+        val centerX = width / 2f - offsetX * shorter / zoom
+        val centerY = height / 2f - offsetY * shorter / zoom
+        val left = (centerX - side / 2f).coerceIn(0f, width - side)
+        val top = (centerY - side / 2f).coerceIn(0f, height - side)
+        return CropRegion(
+            left = left.roundToInt(),
+            top = top.roundToInt(),
+            right = (left + side).roundToInt().coerceAtMost(width),
+            bottom = (top + side).roundToInt().coerceAtMost(height)
+        )
+    }
+
+    /** A rectangle in source pixels; [right] and [bottom] are exclusive, like [Rect]. */
+    data class CropRegion(val left: Int, val top: Int, val right: Int, val bottom: Int) {
+        val width: Int get() = right - left
+        val height: Int get() = bottom - top
+    }
+
+    /**
      * Crops the square of [source] that is visible in the circle for the given framing and scales
      * it to [outputSize] x [outputSize].
      */
@@ -127,18 +158,8 @@ object ImageCropper {
         offsetY: Float,
         outputSize: Int = OUTPUT_SIZE
     ): Bitmap {
-        val shorter = min(source.width, source.height).toFloat()
-        val side = (shorter / zoom).coerceIn(1f, shorter)
-        val centerX = source.width / 2f - offsetX * shorter / zoom
-        val centerY = source.height / 2f - offsetY * shorter / zoom
-        val left = (centerX - side / 2f).coerceIn(0f, source.width - side)
-        val top = (centerY - side / 2f).coerceIn(0f, source.height - side)
-        val srcRect = Rect(
-            left.roundToInt(),
-            top.roundToInt(),
-            (left + side).roundToInt().coerceAtMost(source.width),
-            (top + side).roundToInt().coerceAtMost(source.height)
-        )
+        val region = cropRegion(source.width, source.height, zoom, offsetX, offsetY)
+        val srcRect = Rect(region.left, region.top, region.right, region.bottom)
 
         val output = Bitmap.createBitmap(outputSize, outputSize, Bitmap.Config.ARGB_8888)
         Canvas(output).drawBitmap(
