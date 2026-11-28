@@ -1,6 +1,7 @@
 package com.example.rl_v1.ui.theme.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rl_v1.model.SharedPrefsDeviceIdProvider
@@ -10,6 +11,8 @@ import com.example.rl_v1.model.UserStatus
 import com.example.rl_v1.model.UserUiState
 import com.example.rl_v1.repository.FirestoreUserRepository
 import com.example.rl_v1.repository.UserRepository
+import com.example.rl_v1.storage.FirebaseImageUploader
+import com.example.rl_v1.storage.ImageUploader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +25,7 @@ class UserViewModel(
 
     private val userRepo: UserRepository = FirestoreUserRepository()
     private val deviceIdProvider = SharedPrefsDeviceIdProvider(application)
+    private val imageUploader: ImageUploader = FirebaseImageUploader()
 
     private val _uiState = MutableStateFlow(UserUiState())
     val uiState: StateFlow<UserUiState> = _uiState.asStateFlow()
@@ -96,6 +100,65 @@ class UserViewModel(
                 val userId = deviceIdProvider.getDeviceId()
                 val result = userRepo.updateProfileImage(userId, photoUrl)
                 onResult(result)
+            } catch (e: Exception) {
+                onResult(Result.failure(e))
+            }
+        }
+    }
+
+    /**
+     * Saves the profile picture chosen on the profile photo screen.
+     *
+     * - `null`/blank: deletes the stored picture (best effort) and clears `photoUrl`.
+     * - A remote `http(s)` URL (e.g. the existing download URL): saved as is.
+     * - A local `content://`/`file://` URI: uploaded to Firebase Storage first, then the returned
+     *   download URL is saved as `photoUrl`.
+     *
+     * @param photoUri The picked image URI or existing URL as a string, or `null` to remove it.
+     * @param onResult Called with the saved `photoUrl` (or `null` when removed), or the failure.
+     */
+    fun saveProfilePicture(
+        photoUri: String?,
+        onResult: (Result<String?>) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            try {
+                ensureFirebaseSession()
+                val userId = deviceIdProvider.getDeviceId()
+                val newPhotoUrl: String? = when {
+                    photoUri.isNullOrBlank() -> {
+                        runCatching { imageUploader.deleteProfilePicture(userId) }
+                        null
+                    }
+                    photoUri.startsWith("http://") || photoUri.startsWith("https://") -> photoUri
+                    else -> imageUploader.uploadProfilePicture(userId, Uri.parse(photoUri))
+                }
+                val result = userRepo.updateProfileImage(userId, newPhotoUrl)
+                onResult(result.map { newPhotoUrl })
+            } catch (e: Exception) {
+                onResult(Result.failure(e))
+            }
+        }
+    }
+
+    /**
+     * Uploads an already cropped/compressed JPEG profile picture to Firebase Storage and saves the
+     * returned download URL as the user's `photoUrl`.
+     *
+     * @param jpegBytes The encoded picture to upload.
+     * @param onResult Called with the saved download URL, or the failure.
+     */
+    fun saveProfilePicture(
+        jpegBytes: ByteArray,
+        onResult: (Result<String>) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            try {
+                ensureFirebaseSession()
+                val userId = deviceIdProvider.getDeviceId()
+                val downloadUrl = imageUploader.uploadProfilePicture(userId, jpegBytes)
+                val result = userRepo.updateProfileImage(userId, downloadUrl)
+                onResult(result.map { downloadUrl })
             } catch (e: Exception) {
                 onResult(Result.failure(e))
             }
