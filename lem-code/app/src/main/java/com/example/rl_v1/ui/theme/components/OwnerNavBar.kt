@@ -161,6 +161,7 @@ fun OwnerMainScaffold() {
                 BottomTab.Activity -> Text("Activity")
                 BottomTab.Inbox -> Text("Inbox")
                 BottomTab.Profile -> Text("Profile")
+                BottomTab.Admin -> TODO()
             }
         }
     }

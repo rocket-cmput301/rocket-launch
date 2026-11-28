@@ -29,14 +29,12 @@ import com.example.rl_v1.ui.theme.viewmodel.ensureFirebaseSession
 import kotlinx.coroutines.launch
 
 /*
- * Purpose: Intermediate screen shown when an existing user profile has `isDeleted == true`,
- * informing the user their account is deactivated and allowing one-tap reactivation.
- * Design Pattern: Jetpack Compose UI state holder backed by DeviceIdProvider and UserRepository.
- * Outstanding Issues: None currently known.
+- Intermediate screen shown when an existing user profile has `UserStatus.DELETED`,
+- informing the user their account is deactivated and allowing one-tap reactivation.
  */
 
 /**
- * Displays a deactivation notice and reactivates the user's Firestore profile (`isDeleted = false`)
+ * Displays a deactivation notice and restores a self-deleted Firestore profile (`UserStatus.ACTIVE`)
  * before invoking [onReactivated].
  */
 @Composable
@@ -61,7 +59,7 @@ fun DeactivatedAccountScreen(
             try {
                 ensureFirebaseSession()
                 val userId = deviceIdProvider.getDeviceId()
-                val result = userRepo.reactivateUser(userId)
+                val result = userRepo.setProfileDeleted(userId = userId, deleted = false)
                 result.onSuccess {
                     onReactivated()
                 }.onFailure { throwable ->

@@ -10,7 +10,7 @@ package com.example.rl_v1.model
  * @property role Roles of the User
  * @property photoUrl URL of the User's profile picture
  * @property notificationsEnabled Whether the User wants to receive notifications
- * @property isDeleted Whether the User has been deleted
+ * @property status User account status
  */
 data class UserProfile (
     val userId: String = "",
@@ -20,7 +20,7 @@ data class UserProfile (
     val role: List<UserRole> = mutableListOf<UserRole>(UserRole.ENTRANT),
     val photoUrl: String? = null,
     val notificationsEnabled: Boolean = true,
-    val isDeleted: Boolean = false
+    val status: UserStatus = UserStatus.ACTIVE
 ) {
     /** Returns true if the user has been granted [targetRole]. */
     fun hasRole(targetRole: UserRole): Boolean = role.contains(targetRole)

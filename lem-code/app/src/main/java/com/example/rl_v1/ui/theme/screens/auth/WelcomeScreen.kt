@@ -28,22 +28,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.rl_v1.model.SharedPrefsDeviceIdProvider
+import com.example.rl_v1.model.UserStatus
 import com.example.rl_v1.repository.FirestoreUserRepository
 import com.example.rl_v1.ui.theme.viewmodel.ensureFirebaseSession
 import kotlinx.coroutines.launch
 
 /*
- * Purpose: Entry welcome screen with a single "Get Started" action that checks whether
- * the current device has an existing Firestore user profile without creating one prematurely,
- * plus temporary debug controls to inspect, override, or reset the persisted device ID.
- * Design Pattern: Jetpack Compose UI state holder coordinating DeviceIdProvider and UserRepository.
- * Outstanding Issues: Remove the debug Device ID card before production release.
+- Entry welcome screen with a single "Get Started" action that checks whether
+- the current device has an existing Firestore user profile without creating one prematurely,
+- plus temporary debug controls to inspect, override, or reset the persisted device ID.
+- Design Pattern: Jetpack Compose UI state holder coordinating DeviceIdProvider and UserRepository.
+- Outstanding Issues: Remove the debug Device ID card before production release.
  */
 
 @Composable
 fun WelcomeScreen(
     onNeedsRegistration: () -> Unit,
     onAccountDeactivated: () -> Unit,
+    onAccountRemoved: () -> Unit = onAccountDeactivated,
     onAuthenticated: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -74,7 +76,8 @@ fun WelcomeScreen(
                 result.onSuccess { existingProfile ->
                     when {
                         existingProfile == null -> onNeedsRegistration()
-                        existingProfile.isDeleted -> onAccountDeactivated()
+                        existingProfile.status == UserStatus.DELETED -> onAccountDeactivated()
+                        existingProfile.status == UserStatus.REMOVED -> onAccountRemoved()
                         else -> onAuthenticated()
                     }
                 }.onFailure { throwable ->

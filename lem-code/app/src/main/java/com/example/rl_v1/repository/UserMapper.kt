@@ -2,11 +2,13 @@ package com.example.rl_v1.repository
 
 import com.example.rl_v1.model.UserProfile
 import com.example.rl_v1.model.UserRole
+import com.example.rl_v1.model.UserStatus
 import com.google.firebase.firestore.DocumentSnapshot
 
 /**
- * Maps a Firestore [DocumentSnapshot] into a [UserProfile], safely handling missing fields
- * and invalid role strings so a single malformed field does not fail profile loading.
+ * Maps a Firestore [DocumentSnapshot] into a [UserProfile], safely handling missing fields,
+ * invalid role strings, and legacy `isDeleted` flags so a single malformed field does not fail
+ * profile loading.
  */
 fun DocumentSnapshot.toUserProfile(fallbackUserId: String = id): UserProfile {
     val resolvedUserId = getString("userId")?.takeIf { it.isNotBlank() } ?: fallbackUserId
@@ -22,6 +24,15 @@ fun DocumentSnapshot.toUserProfile(fallbackUserId: String = id): UserProfile {
         ?.ifEmpty { listOf(UserRole.ENTRANT) }
         ?: listOf(UserRole.ENTRANT)
 
+    val rawStatus = getString("status")
+    val parsedStatus = rawStatus
+        ?.let { statusName -> runCatching { UserStatus.valueOf(statusName) }.getOrNull() }
+        ?: if (getBoolean("isDeleted") == true) {
+            UserStatus.DELETED
+        } else {
+            UserStatus.ACTIVE
+        }
+
     return UserProfile(
         userId = resolvedUserId,
         name = getString("name") ?: "",
@@ -30,6 +41,6 @@ fun DocumentSnapshot.toUserProfile(fallbackUserId: String = id): UserProfile {
         role = parsedRoles,
         photoUrl = getString("photoUrl"),
         notificationsEnabled = getBoolean("notificationsEnabled") ?: true,
-        isDeleted = getBoolean("isDeleted") ?: false
+        status = parsedStatus
     )
 }

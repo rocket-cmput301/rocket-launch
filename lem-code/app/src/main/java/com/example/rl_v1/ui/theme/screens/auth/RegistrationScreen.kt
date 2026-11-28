@@ -32,16 +32,15 @@ import androidx.compose.ui.unit.dp
 import com.example.rl_v1.model.SharedPrefsDeviceIdProvider
 import com.example.rl_v1.model.UserProfile
 import com.example.rl_v1.model.UserRole
+import com.example.rl_v1.model.UserStatus
 import com.example.rl_v1.repository.FirestoreUserRepository
 import com.example.rl_v1.ui.theme.viewmodel.ensureFirebaseSession
 import kotlinx.coroutines.launch
 
 /*
- * Purpose: First-time registration screen displaying the generated device user ID,
- * collecting contact information (name, email, phone), and allowing role selection
- * (locked ENTRANT + optional OWNER; ADMIN excluded). Writes to Firestore only on submit.
- * Design Pattern: Jetpack Compose UI form backed by DeviceIdProvider and UserRepository.
- * Outstanding Issues: None currently known.
+- Registration screen for first-time users displaying the generated device user ID,
+- collecting contact information (name, email, phone), and allowing role selection
+- (locked ENTRANT + optional OWNER; ADMIN excluded). Writes to Firestore only on submit.
  */
 
 /**
@@ -98,7 +97,7 @@ fun RegistrationScreen(
             phone = trimmedPhone,
             role = selectedRoles,
             notificationsEnabled = true,
-            isDeleted = false
+            status = UserStatus.ACTIVE
         )
 
         coroutineScope.launch {

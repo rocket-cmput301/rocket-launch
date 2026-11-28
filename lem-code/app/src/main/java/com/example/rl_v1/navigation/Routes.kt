@@ -19,4 +19,5 @@ object Routes {
     const val WELCOME = "welcome"
     const val REGISTRATION = "registration"
     const val DEACTIVATED_ACCOUNT = "deactivated_account"
+    const val ADMIN_PROFILES = "admin_profiles"
 }

@@ -15,10 +15,13 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.rl_v1.model.UserRole
+import com.example.rl_v1.model.UserStatus
 import com.example.rl_v1.ui.theme.components.BottomTab
 import com.example.rl_v1.ui.theme.screens.CampsiteEditScreen
 import com.example.rl_v1.ui.theme.screens.CampsiteRegistrationScreen
 import com.example.rl_v1.ui.theme.screens.activity.ActivityScreen
+import com.example.rl_v1.ui.theme.screens.admin.AdminScreen
 import com.example.rl_v1.ui.theme.screens.explore.CampsiteDetailsScreen
 import com.example.rl_v1.ui.theme.screens.explore.CampsiteSelectScreen
 import com.example.rl_v1.ui.theme.screens.explore.ExploreScreen
@@ -41,12 +44,15 @@ private val idArgument = listOf(navArgument("id") { type = NavType.StringType })
 @Composable
 fun AppNavHost(
     navController: NavHostController,
+    onSignedOutToWelcome: () -> Unit = {},
     modifier: Modifier = Modifier,
     vm: CampsiteViewModel,
     userViewModel: UserViewModel = viewModel()
 ) {
     val userUiState by userViewModel.uiState.collectAsStateWithLifecycle()
     val currentProfile = userUiState.profile
+    val isActiveUser = currentProfile?.status == UserStatus.ACTIVE
+    val isAdmin = isActiveUser && currentProfile?.role?.contains(UserRole.ADMIN) == true
     val currentPersonalInfo = remember(
         currentProfile?.name,
         currentProfile?.email,
@@ -81,9 +87,9 @@ fun AppNavHost(
         }
         composable(
             route = Routes.CAMPSITE_SELECT,
-            enterTransition = { slideInVertically { it } },   // slides up from the bottom
+            enterTransition = { slideInVertically { it } },
             exitTransition = { fadeOut() },
-            popExitTransition = { slideOutVertically { it } } // slides back down on Back
+            popExitTransition = { slideOutVertically { it } }
         ) {
             CampsiteSelectScreen(
                 vm = vm,
@@ -101,8 +107,7 @@ fun AppNavHost(
                     onBack = { navController.popBackStack() },
                     onBook = { navController.navigate("${Routes.SELECT_DATES}/${campsite.id}") },
                     onJoin = {
-                        vm.callJoinLottery(campID = campsite.id)    //the Real Lottery Repo
-                        //navController.navigate(BottomTab.Activity.name)         // commented for now since a bug arises where 'Explore' in navbar doesn't work if this gets called
+                        vm.callJoinLottery(campID = campsite.id)
                     }
                 )
             }
@@ -125,7 +130,6 @@ fun AppNavHost(
                     onConfirm = { checkIn, checkOut, guests ->
                         vm.book(campsite, checkIn, checkOut, guests) { reservation ->
                             navController.navigate("${Routes.RESERVATION_CONFIRMED}/${reservation.id}") {
-                                // Back from the confirmation shouldn't reopen the date picker.
                                 popUpTo("${Routes.SELECT_DATES}/{id}") { inclusive = true }
                             }
                         }
@@ -179,6 +183,25 @@ fun AppNavHost(
             }
         }
 
+        /* ADMIN
+        -----------------------------------------------------------------------------------*/
+        composable(BottomTab.Admin.name) {
+            LaunchedEffect(isAdmin, userUiState.isLoading) {
+                if (!userUiState.isLoading && !isAdmin) {
+                    navController.navigate(BottomTab.Explore.name) {
+                        popUpTo(BottomTab.Explore.name) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
+            }
+
+            if (isAdmin) {
+                AdminScreen(
+                    onManageProfiles = { navController.navigate(Routes.ADMIN_PROFILES) }
+                )
+            }
+        }
+
         /* OTHER TABS
         -----------------------------------------------------------------------------------*/
         composable(BottomTab.Activity.name) { ActivityScreen(vm) }
@@ -192,17 +215,21 @@ fun AppNavHost(
                 onEditPersonalInformation = { navController.navigate(Routes.PERSONAL_INFORMATION) },
                 onEditAccessibility = { navController.navigate(Routes.ACCESSIBILITY) },
                 onSaveProfile = {
-                    // Optional if individual edits already save immediately; hook up if you add batch profile save
+                    // Optional if individual edits already save immediately
                 },
                 onDeleteProfile = {
-                    userViewModel.deleteProfile() // or whatever delete/deactivate method your UserViewModel exposes
+                    userViewModel.setProfileDeleted(deleted = true) { result ->
+                        result.onSuccess {
+                            onSignedOutToWelcome()
+                        }
+                    }
                 }
             )
         }
         composable(Routes.PROFILE_PICTURE) {
             ProfilePictureScreen(
                 displayName = currentProfile?.name.orEmpty(),
-                currentPhotoUrl = currentProfile?.photoUrl, // adjust if UserProfile uses a different field name
+                currentPhotoUrl = currentProfile?.photoUrl,
                 onBack = { navController.popBackStack() },
                 onSave = { newPhotoUrl ->
                     userViewModel.updateProfileImage(newPhotoUrl) { result ->

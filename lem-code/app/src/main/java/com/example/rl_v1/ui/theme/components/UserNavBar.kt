@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.PersonOutline
@@ -39,25 +40,35 @@ import com.example.rl_v1.ui.theme.theme.Cream
 import com.example.rl_v1.ui.theme.theme.DarkGreen
 import com.example.rl_v1.ui.theme.theme.GreyGreen
 
-/** The four tabs of the bottom bar. The name of each tab is also its screen route. */
+/** Tabs of the bottom bar. The name of each tab is also its screen route. */
 enum class BottomTab(
     val label: String,
     val icon: ImageVector,
-    val boldLabel: Boolean = false
+    val boldLabel: Boolean = false,
+    val adminOnly: Boolean = false
 ) {
     Explore("Explore", Icons.Outlined.Search, boldLabel = true),
     Activity("Activity", Icons.Outlined.CalendarToday),
     Inbox("Inbox", Icons.Outlined.ChatBubbleOutline),
-    Profile("Profile", Icons.Outlined.PersonOutline)
+    Profile("Profile", Icons.Outlined.PersonOutline),
+    Admin("Admin", Icons.Outlined.AdminPanelSettings, adminOnly = true)
 }
 
-/** Bottom bar with the four tabs. [selectedTab] is highlighted and [onTabSelected] runs when a tab is tapped. */
+/**
+ * Bottom bar with the main tabs. [Admin] is only shown when [isAdmin] is true.
+ * [selectedTab] is highlighted and [onTabSelected] runs when a tab is tapped.
+ */
 @Composable
 fun AppBottomBar(
     selectedTab: BottomTab,
     onTabSelected: (BottomTab) -> Unit,
+    isAdmin: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val visibleTabs = remember(isAdmin) {
+        if (isAdmin) BottomTab.entries else BottomTab.entries.filterNot { it.adminOnly }
+    }
+
     NavigationBar(
         modifier = modifier
             .fillMaxWidth()
@@ -65,7 +76,7 @@ fun AppBottomBar(
         containerColor = Color.White,
         tonalElevation = 0.dp
     ) {
-        BottomTab.entries.forEach { tab ->
+        visibleTabs.forEach { tab ->
             BottomBarItem(
                 tab = tab,
                 selected = tab == selectedTab,
@@ -138,14 +149,21 @@ private fun BottomBarItem(
 
 /** Screen layout with the bottom bar. The app uses TempMainScreen instead. */
 @Composable
-fun MainScaffold() {
+fun MainScaffold(isAdmin: Boolean = false) {
     var selectedTab by rememberSaveable { mutableStateOf(BottomTab.Explore) }
+
+    LaunchedEffect(isAdmin) {
+        if (!isAdmin && selectedTab == BottomTab.Admin) {
+            selectedTab = BottomTab.Explore
+        }
+    }
 
     Scaffold(
         containerColor = Cream,
         bottomBar = {
             AppBottomBar(
                 selectedTab = selectedTab,
+                isAdmin = isAdmin,
                 onTabSelected = { selectedTab = it }
             )
         }
@@ -162,6 +180,7 @@ fun MainScaffold() {
                 BottomTab.Activity -> Text("Activity")
                 BottomTab.Inbox -> Text("Inbox")
                 BottomTab.Profile -> Text("Profile")
+                BottomTab.Admin -> Text("Admin")
             }
         }
     }

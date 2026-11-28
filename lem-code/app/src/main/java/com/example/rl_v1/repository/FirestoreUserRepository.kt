@@ -2,6 +2,7 @@ package com.example.rl_v1.repository
 
 import com.example.rl_v1.model.UserProfile
 import com.example.rl_v1.model.UserRole
+import com.example.rl_v1.model.UserStatus
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
@@ -59,14 +60,15 @@ class FirestoreUserRepository(
             "role" to profile.role.map { it.name },
             "photoUrl" to profile.photoUrl,
             "notificationsEnabled" to profile.notificationsEnabled,
-            "isDeleted" to profile.isDeleted
+            "status" to profile.status.name
         )
         usersCollection.document(profile.userId).set(data).await()
         profile
     }
 
     /**
-     * Fetches the [UserProfile] for [userId], including when [UserProfile.isDeleted] is `true`.
+     * Fetches the [UserProfile] for [userId], including when its [UserStatus] is [UserStatus.DELETED]
+     * or [UserStatus.REMOVED].
      * Creates and persists a default entrant profile if no document exists yet.
      */
     override suspend fun getUser(userId: String): Result<UserProfile> = runCatching {
@@ -113,19 +115,33 @@ class FirestoreUserRepository(
             usersCollection.document(userId).update("notificationsEnabled", enabled).await()
         }
 
-    /**
-     * Soft-deletes the profile for [userId] by setting `isDeleted = true`.
-     */
-    override suspend fun deleteProfile(userId: String): Result<Unit> = runCatching {
-        usersCollection.document(userId).update("isDeleted", true).await()
-    }
+    override suspend fun setProfileDeleted(userId: String, deleted: Boolean): Result<Unit> =
+        runCatching {
+            val docRef = usersCollection.document(userId)
+            if (deleted) {
+                docRef.update("status", UserStatus.DELETED.name).await()
+            } else {
+                val snapshot = docRef.get().await()
+                val currentStatus = if (snapshot.exists()) {
+                    snapshot.toUserProfile(fallbackUserId = userId).status
+                } else {
+                    UserStatus.ACTIVE
+                }
+                if (currentStatus == UserStatus.REMOVED) {
+                    error("Profile has been removed by an administrator and cannot be self-reactivated.")
+                }
+                docRef.update("status", UserStatus.ACTIVE.name).await()
+            }
+        }
 
     /**
-     * Reactivates a soft-deleted profile for [userId] by setting `isDeleted = false`.
+     * Sets or revokes admin removal ([UserStatus.REMOVED] vs. [UserStatus.ACTIVE]) for [userId].
      */
-    override suspend fun reactivateUser(userId: String): Result<Unit> = runCatching {
-        usersCollection.document(userId).update("isDeleted", false).await()
-    }
+    override suspend fun setProfileRemovedByAdmin(userId: String, removed: Boolean): Result<Unit> =
+        runCatching {
+            val targetStatus = if (removed) UserStatus.REMOVED else UserStatus.ACTIVE
+            usersCollection.document(userId).update("status", targetStatus.name).await()
+        }
 
     /**
      * Grants or revokes [role] for [userId] on the `role` array field.
@@ -151,12 +167,24 @@ class FirestoreUserRepository(
         snapshot.documents.map { doc -> doc.toUserProfile(fallbackUserId = doc.id) }
     }
 
+    /**
+     * Retrieves user profiles matching [status] directly from Firestore.
+     */
+    override suspend fun getUsersByStatus(status: UserStatus): Result<List<UserProfile>> =
+        runCatching {
+            val snapshot = usersCollection
+                .whereEqualTo("status", status.name)
+                .get()
+                .await()
+            snapshot.documents.map { doc -> doc.toUserProfile(fallbackUserId = doc.id) }
+        }
+
     /** Builds a default entrant [UserProfile] for [userId] without persisting it. */
     private fun buildDefaultUser(userId: String): UserProfile =
         UserProfile(
             userId = userId,
             role = listOf(UserRole.ENTRANT),
-            isDeleted = false
+            status = UserStatus.ACTIVE
         )
 
     /** Creates and persists a default entrant [UserProfile] for [userId] in Firestore. */

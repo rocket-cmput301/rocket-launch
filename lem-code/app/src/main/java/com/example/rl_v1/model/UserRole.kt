@@ -7,12 +7,7 @@ package com.example.rl_v1.model
  * @property ADMIN User manages the application.
  */
 enum class UserRole {
-    /** User can view and book campsites. */
     ENTRANT,
-
-    /** User can create and manage campsites. */
     OWNER,
-
-    /** User manages the application */
     ADMIN
 }

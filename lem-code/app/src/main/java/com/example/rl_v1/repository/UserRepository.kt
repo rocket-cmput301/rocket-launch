@@ -2,10 +2,11 @@ package com.example.rl_v1.repository
 
 import com.example.rl_v1.model.UserProfile
 import com.example.rl_v1.model.UserRole
+import com.example.rl_v1.model.UserStatus
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Repository abstraction for user profile, role, and notification preference management
+ * Repository abstraction for user profile, role, status, and notification preference management
  * using the device identifier as the user ID.
  */
 interface UserRepository {
@@ -27,7 +28,8 @@ interface UserRepository {
     suspend fun createUserProfile(profile: UserProfile): Result<UserProfile>
 
     /**
-     * Retrieves the user profile for [userId], including when marked as deleted (`isDeleted == true`).
+     * Retrieves the user profile for [userId], including when its [UserStatus] is [UserStatus.DELETED]
+     * or [UserStatus.REMOVED].
      * If no profile document exists yet, creates and returns a default entrant profile.
      */
     suspend fun getUser(userId: String): Result<UserProfile>
@@ -53,15 +55,16 @@ interface UserRepository {
     suspend fun setNotificationsEnabled(userId: String, enabled: Boolean): Result<Unit>
 
     /**
-     * Soft-deletes (disables) the profile for [userId] by setting `isDeleted = true`
-     * rather than deleting the document from Firestore.
+     * Marks the profile for [userId] as self-deleted ([UserStatus.DELETED]) when [deleted] is `true`,
+     * or restores a [UserStatus.DELETED] profile to [UserStatus.ACTIVE] when [deleted] is `false`.
+     * Does not reactivate profiles with [UserStatus.REMOVED].
      */
-    suspend fun deleteProfile(userId: String): Result<Unit>
+    suspend fun setProfileDeleted(userId: String, deleted: Boolean): Result<Unit>
 
     /**
-     * Reactivates a soft-deleted profile for [userId] by setting `isDeleted = false`.
+     * Sets or revokes admin removal ([UserStatus.REMOVED] vs. [UserStatus.ACTIVE]) for [userId].
      */
-    suspend fun reactivateUser(userId: String): Result<Unit>
+    suspend fun setProfileRemovedByAdmin(userId: String, removed: Boolean): Result<Unit>
 
     /**
      * Grants or revokes a [role] for [userId].
@@ -72,4 +75,9 @@ interface UserRepository {
      * Retrieves all user profiles in the system.
      */
     suspend fun getAllUsers(): Result<List<UserProfile>>
+
+    /**
+     * Retrieves user profiles matching the given [status].
+     */
+    suspend fun getUsersByStatus(status: UserStatus): Result<List<UserProfile>>
 }

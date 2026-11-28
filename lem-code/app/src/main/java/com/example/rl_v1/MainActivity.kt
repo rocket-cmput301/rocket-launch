@@ -69,7 +69,11 @@ class MainActivity : ComponentActivity() {
                 if (signedIn && !loggedIn) {
                     AuthNavHost(onAuthenticated = { loggedIn = true })
                 } else if (signedIn) {
-                    TempMainScreen()
+                    TempMainScreen(
+                        onProfileDeleted = {
+                            loggedIn = false
+                        }
+                    )
                 } else {
                     Column(
                         modifier = Modifier
