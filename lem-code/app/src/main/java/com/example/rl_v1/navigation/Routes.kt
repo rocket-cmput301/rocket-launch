@@ -11,6 +11,14 @@ object Routes {
     const val CONVERSATION = "conversation"
     const val FILTERS = "filters"
     const val CAMPSITE_SELECT = "campsite_select"
-
     const val LOTTERY_REGISTER = "lottery_register"
+    const val LOGIN = "login"
+    const val SIGN_UP = "sign_up"
+    const val PROFILE_PICTURE = "profile_picture"
+    const val PERSONAL_INFORMATION = "personal_information"
+    const val ACCESSIBILITY = "accessibility"
+    const val WELCOME = "welcome"
+    const val REGISTRATION = "registration"
+    const val DEACTIVATED_ACCOUNT = "deactivated_account"
+    const val ADMIN_PROFILES = "admin_profiles"
 }

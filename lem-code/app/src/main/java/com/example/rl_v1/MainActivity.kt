@@ -16,10 +16,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.rl_v1.navigation.AuthNavHost
 import com.example.rl_v1.ui.theme.screens.TempMainScreen
 import com.example.rl_v1.ui.theme.theme.Rlv1Theme
 import com.google.firebase.auth.FirebaseAuth
@@ -40,6 +42,9 @@ class MainActivity : ComponentActivity() {
                 var signedIn by remember { mutableStateOf(false) }
                 var errorMessage by remember { mutableStateOf<String?>(null) }
                 var attempt by remember { mutableStateOf(0) }
+                // TODO: replace with a real check (e.g. the Firebase user is not anonymous)
+                //  once login/sign-up are wired up. For now the login screen shows every launch.
+                var loggedIn by rememberSaveable { mutableStateOf(false) }
 
                 LaunchedEffect(attempt) {
                     errorMessage = null
@@ -61,8 +66,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                if (signedIn) {
-                    TempMainScreen()
+                if (signedIn && !loggedIn) {
+                    AuthNavHost(onAuthenticated = { loggedIn = true })
+                } else if (signedIn) {
+                    TempMainScreen(
+                        onProfileDeleted = {
+                            loggedIn = false
+                        }
+                    )
                 } else {
                     Column(
                         modifier = Modifier
