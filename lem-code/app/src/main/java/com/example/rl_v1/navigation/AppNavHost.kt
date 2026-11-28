@@ -6,7 +6,9 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -300,16 +302,34 @@ fun AppNavHost(
             )
         }
         composable(Routes.PROFILE_PICTURE) {
+            var isSavingPhoto by remember { mutableStateOf(false) }
+            var photoErrorMessage by remember { mutableStateOf<String?>(null) }
+            val onPhotoSaved: (Result<*>) -> Unit = { result ->
+                isSavingPhoto = false
+                result
+                    .onSuccess { navController.popBackStack() }
+                    .onFailure { e ->
+                        photoErrorMessage =
+                            e.localizedMessage ?: "Couldn't upload your photo. Please try again."
+                    }
+            }
             ProfilePictureScreen(
                 displayName = currentProfile?.name.orEmpty(),
                 currentPhotoUrl = currentProfile?.photoUrl,
+                isSaving = isSavingPhoto,
+                errorMessage = photoErrorMessage,
                 onBack = { navController.popBackStack() },
-                onSave = { newPhotoUrl ->
-                    userViewModel.updateProfileImage(newPhotoUrl) { result ->
-                        result.onSuccess {
-                            navController.popBackStack()
-                        }
-                    }
+                onSave = { newPhotoUri ->
+                    // Removal, an unchanged URL, or (fallback) an unadjusted local image upload.
+                    isSavingPhoto = true
+                    photoErrorMessage = null
+                    userViewModel.saveProfilePicture(newPhotoUri, onPhotoSaved)
+                },
+                onSaveAdjusted = { jpegBytes ->
+                    // Uploads the cropped photo to Firebase Storage, then saves its download URL.
+                    isSavingPhoto = true
+                    photoErrorMessage = null
+                    userViewModel.saveProfilePicture(jpegBytes, onPhotoSaved)
                 }
             )
         }
