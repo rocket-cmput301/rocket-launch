@@ -25,7 +25,7 @@ class OwnerCampsitesScreenTest {
 
     @Test fun rejectingAReservation() {
         val vm = fakeViewModel(reservations = FakeReservationRepository(listOf(testReservation)))
-        composeRule.setContent { OwnerCampsitesScreen(vm, onBack = {}, onPublish = {}, onEdit = {}) }
+        composeRule.setContent { OwnerCampsitesScreen(vm, onBack = {}, onPublish = {}, onCreateLottery = {}, onEdit = {}, onUpdate = {}, onViewWaitlist = {}, onViewDetails = {}) }
         waitForText("Reject")
 
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Reject"))

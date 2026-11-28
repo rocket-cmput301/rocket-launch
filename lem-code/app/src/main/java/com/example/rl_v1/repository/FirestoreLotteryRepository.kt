@@ -277,23 +277,6 @@ class FirestoreLotteryRepository(
             .documents
         val (winners, losers) = drawLottery(waiting, chosenLottery.maxWinners)
 
-        val winners = thisLotteryEntries.shuffled().take(chosenLottery?.maxWinners!!)                //select the winners randomly
-        var usersGranted: Int = 0
-        for (winner in winners){
-            //winner.toObject(WaitlistEntry::class.java).status = "WON"
-            winner.reference.update("status", "WON").await()            //grant the corresponding winning User permission to make a reservation
-
-
-            val winningUserID = winner.toObject(WaitlistEntry::class.java).entrantId
-            //TODO: notify each winner of their lottery win (via notification? via inbox?)
-
-            //if User is successfully notified and granted permissions
-            usersGranted +=1
-            //println("Updated ${winner.id} to WON")
-        }
-
-        //TODO: notify all other Users that they lost the lottery (US 01.03.02)
-        notifyLosers()
         // One batch, so every entry changes together or none do.
         // shortcut: a batch holds 500 writes; split it if a lottery ever has more than 500 waiting entrants.
         val batch = firestore.batch()
