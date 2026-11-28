@@ -283,6 +283,7 @@ fun AppNavHost(
                 profile = currentProfile,
                 onPublishCampsite = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
                 onManageCampsites = { navController.navigate(Routes.OWNER_CAMPSITES) },
+                onRegisterLottery = { navController.navigate(Routes.LOTTERY_REGISTER)},
                 onEditProfilePicture = { navController.navigate(Routes.PROFILE_PICTURE) },
                 onEditPersonalInformation = { navController.navigate(Routes.PERSONAL_INFORMATION) },
                 onEditAccessibility = { navController.navigate(Routes.ACCESSIBILITY) },
@@ -296,8 +297,6 @@ fun AppNavHost(
                         }
                     }
                 }
-                onManageCampsites = { navController.navigate(Routes.OWNER_CAMPSITES) },
-                onRegisterLottery = { navController.navigate(Routes.LOTTERY_REGISTER)}
             )
         }
         composable(Routes.PROFILE_PICTURE) {

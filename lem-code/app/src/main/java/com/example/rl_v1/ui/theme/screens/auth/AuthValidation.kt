@@ -6,6 +6,15 @@ import android.util.Patterns
 internal object AuthValidation {
     const val MIN_PASSWORD_LENGTH = 6 // Firebase Auth's minimum
 
+    fun nameError(name: String): String? {
+        val trimmed = name.trim()
+        return when {
+            trimmed.isBlank() -> "Please enter your name."
+            !trimmed.any { it.isLetter() } -> "Please enter a valid name."
+            else -> null
+        }
+    }
+
     fun emailError(email: String): String? = when {
         email.isBlank() -> "Enter your email"
         !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> "Enter a valid email"

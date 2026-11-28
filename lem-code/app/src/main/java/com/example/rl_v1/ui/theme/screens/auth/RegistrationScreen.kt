@@ -73,8 +73,9 @@ fun RegistrationScreen(
         val trimmedEmail = email.trim()
         val trimmedPhone = phone.trim()
 
-        if (trimmedName.isBlank()) {
-            errorMessage = "Please enter your name."
+        val nameValidationError = AuthValidation.nameError(name)
+        if (nameValidationError != null) {
+            errorMessage = nameValidationError
             return
         }
         val emailValidationError = AuthValidation.emailError(trimmedEmail)
