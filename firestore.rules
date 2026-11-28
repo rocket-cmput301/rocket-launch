@@ -14,7 +14,7 @@ service cloud.firestore {
           'maxOccupancy', 'pricePerNight',
           'rating', 'ratingCount', 'description', 'amenities',
           'latitude', 'longitude', 'imageUrl', 'rules',
-          'cancellationPolicy', 'geographicFeature',
+          'cancellationPolicy', 'geographicFeature', 'availability',
           'availableFrom', 'availableTo'
         ])
         && d.name is string
@@ -40,6 +40,7 @@ service cloud.firestore {
         && d.get('geographicFeature', []) is list
         && d.get('availableFrom', '') is string
         && d.get('availableTo', '') is string
+        && (d.get('availability', null) == null || d.get('availability', null) is map)
         && (d.get('imageUrl', null) == null || d.get('imageUrl', null) is string);
     }
 
