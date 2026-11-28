@@ -7,6 +7,7 @@ import com.example.rl_v1.model.DateAvailability
 import com.example.rl_v1.model.Filters
 import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.model.Reservation
+import com.example.rl_v1.model.WaitlistEntry
 import com.example.rl_v1.repository.CampsiteRepository
 import com.example.rl_v1.repository.FirestoreCampsiteRepository
 import com.example.rl_v1.repository.FirestoreLotteryRepository
@@ -28,6 +29,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.rl_v1.search.filterBy
 import java.time.LocalDate
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.newCoroutineContext
 
 /**
  * connects campsite and reservation screens to Firestore.
@@ -153,7 +158,6 @@ class CampsiteViewModel(
                         rules = rules.trim(),
                         cancellationPolicy = cancellationPolicy.trim(),
                         availability = DateAvailability(startDate = availableFrom.trim(), endDate = availableTo.trim()),
-                        //lottery = null      //must be set separately
                     )
                 )
 
@@ -299,7 +303,12 @@ class CampsiteViewModel(
         .observeLotteriesByUser(userId = userId, type = "Not Selected")
         .asState(emptyList())
 
-    //-------------- LOTTERY JOIN/LEAVE CALL FUNCTIONS --------------
+    var ownerOwnedLotteries = lotteryRepo
+        .observeLotteriesByOwner(ownerId = "8bkEYENWDCWqz4mRcdTnWGeLmbv2")  //test
+        //.observeLotteriesByOwner(ownerId = userId)                        //actual
+        .asState(emptyList())
+
+    //-------------- LOTTERY CALL FUNCTIONS; functions that bridge the FirestoreLotteryRepository and a separate Composable file --------------
     fun callJoinLottery(campID: String){
         viewModelScope.launch {
             val lotID = lotteryRepo.getLotteryID(campID)          //find the lottery in 'lotteries' collection in Firestore based on campsite ID
@@ -314,7 +323,7 @@ class CampsiteViewModel(
         }
     }
 
-    /** Called when Lottery is to select its winners ; called when a lottery's registration period ends */
+    /** Called when Lottery is to select its winners ; called when a lottery's registration period ends; how is this implemented though */
     fun callWinnerSelection(campID: String): Unit{
         viewModelScope.launch {
             val lotID = lotteryRepo.getLotteryID(campID = campID)
@@ -329,6 +338,16 @@ class CampsiteViewModel(
             lotteryRepo.declineOpportunity(lotID.toString(), userId)           //find the WaitlistEntry turn status to 'TERMINATED'
         }
     }
+
+    /** Called when an Owner is viewing the details of a lottery */
+    fun callViewOwnerWaitlistEntries(lotteryID: String, ownerID: String): Flow<List<WaitlistEntry>> {
+        return lotteryRepo.observeWaitlistUsersByOwner(
+            lotteryId = lotteryID,
+            ownerId = "8bkEYENWDCWqz4mRcdTnWGeLmbv2"    //test
+            //ownerId = userId                          //actual; waiting for roles
+        )
+    }
+
 
     /** DEV TEST FUNCTION: used to reset all Waitlist Entries */
     fun resetEntries(){
@@ -346,7 +365,6 @@ class CampsiteViewModel(
         bookingPeriod: DateAvailability,
         maxWinners: Int,
         capacity: Int?,
-        onDone: () -> Unit = {}
     ){
         viewModelScope.launch {
             try{
@@ -362,6 +380,33 @@ class CampsiteViewModel(
                 _message.value = "Could not publish: ${error.message}"
             }
         }
+    }
 
+    /** Called when Owner wishes to UPDATE an existing lottery */
+    fun callUpdateLottery(
+        lotteryID: String,
+        newCampsiteIDs: List<String>,
+        ownerID: String,
+        newRegistrationPeriod: DateAvailability,
+        newBookingPeriod: DateAvailability,
+        newMaxWinners: Int,
+        newCapacity: Int?
+    ){
+        viewModelScope.launch {
+            try{
+                lotteryRepo.updateLottery(
+                    Lottery(id=lotteryID,  campsiteIds = newCampsiteIDs, ownerId = userId, registrationPeriod = newRegistrationPeriod, bookingPeriod = newBookingPeriod, maxWinners = newMaxWinners, capacity = newCapacity)
+                    //Lottery(id="",  campsiteIds = campsiteIDs, ownerId = ownerID, registrationPeriod = registrationPeriod, bookingPeriod = bookingPeriod, maxWinners = maxWinners, capacity = capacity)
+                )
+
+                _message.value = "Updated Lottery"
+            }
+            catch (error: CancellationException){
+                throw error
+            } catch (error: Exception){
+                println(error)
+                _message.value = "Could not update: ${error.message}"
+            }
+        }
     }
 }

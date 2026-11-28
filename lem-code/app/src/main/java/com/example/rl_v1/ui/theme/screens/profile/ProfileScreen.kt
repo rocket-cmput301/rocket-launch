@@ -50,8 +50,7 @@ val APP_POLICIES = listOf(
 @Composable
 fun ProfileScreen(
     onPublishCampsite: () -> Unit = {},
-    onManageCampsites: () -> Unit = {},
-    onRegisterLottery: () -> Unit = {}
+    onManageCampsites: () -> Unit = {}
 ){
     var showPolicies by rememberSaveable { mutableStateOf(false) }
 
@@ -93,18 +92,9 @@ fun ProfileScreen(
         }
         item{
             Header1("Hosting")
+
         }
-        item{
-            LargeButtonPrimary("Publish a campsite", onClick = onPublishCampsite)
-        }
-        item{
-            LargeButtonPrimary("Register Lottery", onClick = onRegisterLottery)
-        }
-        /*
-        item{
-            LargeButtonPrimary("Update Lottery", onClick = onUpdateLottery)
-        }
-        */
+
         item{
             LargeButtonSecondary("Manage my campsites", onClick = onManageCampsites)
         }

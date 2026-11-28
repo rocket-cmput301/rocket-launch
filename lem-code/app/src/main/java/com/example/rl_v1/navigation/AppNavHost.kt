@@ -23,7 +23,10 @@ import com.example.rl_v1.ui.theme.screens.explore.CampsiteSelectScreen
 import com.example.rl_v1.ui.theme.screens.explore.ExploreScreen
 import com.example.rl_v1.ui.theme.screens.explore.MakeFilterScreen
 import com.example.rl_v1.ui.theme.screens.inbox.InboxScreen
+import com.example.rl_v1.ui.theme.screens.owner.OwnerLotteryUpdateScreen
 import com.example.rl_v1.ui.theme.screens.owner.OwnerCampsitesScreen
+import com.example.rl_v1.ui.theme.screens.owner.OwnerLotteryListScreen
+import com.example.rl_v1.ui.theme.screens.owner.OwnerSelectedLotteryScreen
 import com.example.rl_v1.ui.theme.screens.profile.ProfileScreen
 import com.example.rl_v1.ui.theme.screens.reservation.ReservationConfirmedScreen
 import com.example.rl_v1.ui.theme.screens.reservation.SelectDatesScreen
@@ -88,33 +91,7 @@ fun AppNavHost(
 
         /* RESERVATIONS
         -----------------------------------------------------------------------------------*/
-        composable("${Routes.SELECT_DATES}/{id}", arguments = idArgument) { entry ->
-            // -- ORIGINAL --
-            /*
-            val id = entry.arguments?.getString("id")
-            val all by vm.allCampsites.collectAsStateWithLifecycle()
-            val message by vm.message.collectAsStateWithLifecycle()
-            val campsite = all.firstOrNull { it.id == id }
-            LaunchedEffect(Unit) { vm.clearMessage() }
-
-            if (campsite != null) {
-                SelectDatesScreen(
-                    campsite = campsite,
-                    message = message,
-                    onBack = { navController.popBackStack() },
-                    onConfirm = { checkIn, checkOut, guests ->
-                        vm.book(campsite, checkIn, checkOut, guests) { reservation ->
-                            navController.navigate("${Routes.RESERVATION_CONFIRMED}/${reservation.id}") {
-                                // Back from the confirmation shouldn't reopen the date picker.
-                                popUpTo("${Routes.SELECT_DATES}/{id}") { inclusive = true }
-                            }
-                        }
-                    }
-                )
-            }*/
-            // -- ORIGINAL --
-
-
+        composable("${Routes.SELECT_DATES}/{id}", arguments = idArgument) { entry ->        //whole block modified for Multiple-Campsite Lotteries
             val lotID = entry.arguments?.getString("id")
             val all by vm.allCampsites.collectAsStateWithLifecycle()
             val message by vm.message.collectAsStateWithLifecycle()
@@ -125,8 +102,6 @@ fun AppNavHost(
             val campsites = all.filter { correspondingLottery?.campsiteIds?.contains(it.id) == true  }
 
             LaunchedEffect(Unit) { vm.clearMessage() }
-
-
             SelectDatesScreen(
                 campsites = campsites,
                 message = message,
@@ -190,10 +165,14 @@ fun AppNavHost(
                 vm = vm,
                 onBack = { navController.popBackStack() },
                 onPublish = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
-                onEdit = { id -> navController.navigate("${Routes.OWNER_EDIT}/$id") }
+                onEdit = { id -> navController.navigate("${Routes.OWNER_EDIT}/$id") },
+                onCreateLottery = { navController.navigate(Routes.LOTTERY_REGISTER)},
+                onViewWaitlist = { lotId -> navController.navigate("${Routes.LOTTERY_WAITLIST}/$lotId") },
+                onUpdate = { lotId -> navController.navigate("${Routes.LOTTERY_UPDATE}/$lotId")},
+                onViewDetails = {lotId -> navController.navigate("${Routes.LOTTERY_DETAILS}/$lotId") }
             )
         }
-        composable("${Routes.OWNER_EDIT}/{id}", arguments = idArgument) { entry ->
+        composable("${Routes.OWNER_EDIT}/{id}", arguments = idArgument) { entry ->      //campsite edit
             val id = entry.arguments?.getString("id")
             val mine by vm.ownerCampsites.collectAsStateWithLifecycle()
             val campsite = mine.firstOrNull { it.id == id }
@@ -206,20 +185,63 @@ fun AppNavHost(
             }
         }
 
+        composable("${Routes.LOTTERY_WAITLIST}/{id}", arguments = idArgument) { lottery ->
+            val id = lottery.arguments?.getString("id")
+            val mine by vm.ownerOwnedLotteries.collectAsStateWithLifecycle()
+            val lottery = mine.firstOrNull { it.id == id }
+
+            if (lottery != null) {
+                OwnerLotteryListScreen(
+                    vm = vm,
+                    lottery = lottery,
+                    onBack = { navController.popBackStack() },
+                    onSend = {
+                        //TODO: send announcement (US 02.10.01)
+                    }
+                )
+            }
+        }
+
+        composable("${Routes.LOTTERY_DETAILS}/{id}", arguments = idArgument){ lottery ->
+            val id = lottery.arguments?.getString("id")
+            val mine by vm.ownerOwnedLotteries.collectAsStateWithLifecycle()
+            val lotteryFound = mine.firstOrNull { it.id == id }
+
+            if (lotteryFound != null) {
+                OwnerSelectedLotteryScreen(
+                    vm = vm,
+                    lottery = lotteryFound,
+                    onBack = { navController.popBackStack() },
+                    onUpdate = { lotId -> navController.navigate("${Routes.LOTTERY_UPDATE}/$lotId")},
+                    onViewWaitlist = {lotId -> navController.navigate("${Routes.LOTTERY_WAITLIST}/$lotId")},
+                    onSend = {
+                        //TODO: send announcement (US 02.10.01)
+                    }
+                )
+            }
+        }
+
+        composable("${Routes.LOTTERY_UPDATE}/{id}", arguments = idArgument){ lottery ->
+            val id = lottery.arguments?.getString("id")
+            val mine by vm.ownerOwnedLotteries.collectAsStateWithLifecycle()
+            val lotteryFound = mine.firstOrNull { it.id == id }
+
+            if (lotteryFound != null){
+                OwnerLotteryUpdateScreen(
+                    vm = vm,
+                    targetLottery = lotteryFound,
+                    onBack = { navController.popBackStack() },
+                    onDone = { navController.popBackStack() },  //double check
+                )
+            }
+
+        }
+
+
         /* OTHER TABS
         -----------------------------------------------------------------------------------*/
-        composable(BottomTab.Activity.name) {
+        composable(BottomTab.Activity.name) {                                       //whole block modified for multi-campsite lotteries
             val allLots = vm.userWonLotteries.collectAsStateWithLifecycle()
-
-            /* -- ORIGINAL --
-            ActivityScreen(vm, onBook = { campsiteId ->
-                val campsite = all.firstOrNull{ it.id == campsiteId}
-                if (campsite != null){
-                    navController.navigate("${Routes.SELECT_DATES}/${campsite.id}")
-                }
-            })  -- ORIGINAL --
-            */
-
             ActivityScreen(
                 vm,
                 onBook = { lotteryId ->
@@ -235,7 +257,6 @@ fun AppNavHost(
             ProfileScreen(
                 onPublishCampsite = { navController.navigate(Routes.CAMPSITE_REGISTRATION) },
                 onManageCampsites = { navController.navigate(Routes.OWNER_CAMPSITES) },
-                onRegisterLottery = { navController.navigate(Routes.LOTTERY_REGISTER)}
             )
         }
     }

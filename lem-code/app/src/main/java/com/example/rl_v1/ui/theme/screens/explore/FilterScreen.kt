@@ -42,10 +42,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.rl_v1.model.DateAvailability
 import java.text.SimpleDateFormat
-import java.time.LocalDate
 import java.time.Year
 import java.util.Date
 import java.util.Locale
+
+import androidx.compose.material3.SelectableDates
+import androidx.compose.ui.unit.min
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.LocalDate
 
 @Composable
 /**
@@ -107,7 +112,8 @@ public fun MakeFilterScreen(
         })
         if (activeFilterBooleans[1]){
             DateRangePickerModal(
-
+                minDate = LocalDate.now(),
+                maxDate = LocalDate.now().plusYears(1),
                 onDateRangeSelected = { valid, pair ->
                     if (valid){
                         val difference = pair.second!! - pair.first!!
@@ -232,12 +238,25 @@ private fun MakeFilterSection(header: String, subheader: String, buttonAction: (
  */
 @Composable
 fun DateRangePickerModal(
+    minDate: LocalDate,
+    maxDate: LocalDate,
     onDateRangeSelected: (Boolean, Pair<Long?, Long?>) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val todayDate = remember { LocalDate.now() }
-    val todayYear = remember { Year.now().value }
-    val dateRangePickerState = rememberDateRangePickerState(yearRange = IntRange(todayYear,todayYear+1))  //can only filter within 1 year of booking
+    val dateRangePickerState = rememberDateRangePickerState(
+        yearRange = IntRange(minDate.year,maxDate.year),
+        selectableDates = object : SelectableDates{
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val date = Instant
+                    .ofEpochMilli(utcTimeMillis)
+                    .atZone(ZoneOffset.UTC)
+                    .toLocalDate()
+
+                return !date.isBefore(minDate) &&
+                        !date.isAfter(maxDate)
+            }
+        }
+    )  //can only filter within 1 year of booking
     var warningMsg by remember {mutableStateOf("Select date range")}
 
     DatePickerDialog(
@@ -264,8 +283,8 @@ fun DateRangePickerModal(
                         formatter.format(Date(dateRangePickerState.selectedStartDateMillis!!)),
                         formatter.format(Date(dateRangePickerState.selectedEndDateMillis!!))
                     )
-                    if (proposedDates.first.substring(0,2).toInt() < todayDate.monthValue ||
-                        proposedDates.first.substring(3,5).toInt()+1 < todayDate.dayOfMonth     //for some reason, first date is off by 1
+                    if (proposedDates.first.substring(0,2).toInt() < minDate.monthValue ||
+                        proposedDates.first.substring(3,5).toInt()+1 < minDate.dayOfMonth     //for some reason, first date is off by 1
                         ){  //applies above restrictions
                         onDateRangeSelected(
                             false,

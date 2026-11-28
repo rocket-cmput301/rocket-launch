@@ -39,6 +39,8 @@ import com.example.rl_v1.ui.theme.theme.Forest
 import com.example.rl_v1.ui.theme.theme.LightGreen
 import com.example.rl_v1.ui.theme.viewmodel.CampsiteViewModel
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 
@@ -56,11 +58,12 @@ fun LotteryRegistrationScreen(
     onBack: () -> Unit,
     onDone: () -> Unit
 ){
-    BackHandler(onBack = onBack)
+    BackHandler(onBack = onBack)        //Actual Android 'Back' Button
 
     //val campsites by vm.ownerCampsites.collectAsStateWithLifecycle()          //the actual line we want
     val placeholderOwnerId = "8bkEYENWDCWqz4mRcdTnWGeLmbv2"
     val campsites by vm.specificOwnerSite(placeholderOwnerId).collectAsStateWithLifecycle() //test fetch
+    var regPeriodValid by remember { mutableStateOf(false) }
 
     var selectedCampsites by remember { mutableStateOf(setOf<String>()) }
     val formatter = SimpleDateFormat("MM/dd/yyyy",Locale.getDefault())
@@ -93,10 +96,11 @@ fun LotteryRegistrationScreen(
             }
         }
 
+
         item{
             var openRegWindow by remember { mutableStateOf(false) }
             val interactionSource = remember { MutableInteractionSource() }
-            Column(
+            Column( //HARD CODED COLUMN FOR CLICKABILITY INSTEAD OF PRE-MADE UI ASSET
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(LightGreen)
                     .clickable(
                         interactionSource = interactionSource,
@@ -114,13 +118,17 @@ fun LotteryRegistrationScreen(
                 Text("${registrationPeriod.startDate} to ${registrationPeriod.endDate}")
             }
             if (openRegWindow){
-                DateRangePickerModal(onDateRangeSelected = { valid, pair ->
+                DateRangePickerModal(
+                    minDate = LocalDate.now(),
+                    maxDate = LocalDate.now().plusYears(1),
+                    onDateRangeSelected = { valid, pair ->
                     if (valid){
                         val milsInADay = 86400000
                         registrationPeriod = DateAvailability(
                             startDate = formatter.format(Date(pair.first!! + milsInADay)),
                             endDate = formatter.format(Date(pair.second!! + milsInADay))
                             )
+                        regPeriodValid = true
                     }
                     else{
                         registrationPeriod = DateAvailability(startDate = "INVALID", endDate = "INVALID")
@@ -131,46 +139,57 @@ fun LotteryRegistrationScreen(
             }
         }
 
-        item{
-            var openBookWindow by remember { mutableStateOf(false) }
-            val interactionSource = remember { MutableInteractionSource() }
-            Column(
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(LightGreen)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null
-                    ) {
-                       openBookWindow = true
-                    }
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
-                Text(
-                    text = "Booking Period",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Forest
-                )
-                Spacer(Modifier.height(4.dp))
-                Text("${bookingPeriod.startDate} to ${bookingPeriod.endDate}")
+        if (regPeriodValid){
+            item{
+                var openBookWindow by remember { mutableStateOf(false) }
+                val interactionSource = remember { MutableInteractionSource() }
+                Column(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(LightGreen)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null
+                        ) {
+                            openBookWindow = true
+                        }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                ) {
+                    Text(
+                        text = "Booking Period",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Forest
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text("${bookingPeriod.startDate} to ${bookingPeriod.endDate}")
+                }
+                if (openBookWindow) {
+                    val restrictionFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+                    DateRangePickerModal(
+                        minDate = LocalDate.parse(registrationPeriod.endDate,restrictionFormatter),        //restrict Booking Period to start ON or after the Registration Period
+                        maxDate = LocalDate.now().plusYears(1),
+                        onDateRangeSelected = { valid, pair ->
+                            if (valid) {
+                                val milsInADay = 86400000
+                                bookingPeriod = DateAvailability(
+                                    startDate = formatter.format(Date(pair.first!! + milsInADay)),  //added because displayed date is 1 day behind what is actually selected
+                                    endDate = formatter.format(Date(pair.second!! + milsInADay))
+                                )
+                            }
+                        },
+                        onDismiss = {
+                            openBookWindow = false
+                        }
+                    )
+                }
+                Text("Booking must be after registration period. \nBooking and Registration periods must not overlap. (Unless Booking starts on the same day Registration Ends).", fontSize = 12.sp)
             }
-            if (openBookWindow){
-                DateRangePickerModal(onDateRangeSelected = { valid, pair ->
-                    if (valid){
-                        val milsInADay = 86400000
-                        bookingPeriod = DateAvailability(
-                            startDate = formatter.format(Date(pair.first!! + milsInADay)),
-                            endDate = formatter.format(Date(pair.second!! + milsInADay))
-                        )
-                    }
-                    else{
-                        bookingPeriod = DateAvailability(startDate = "INVALID", endDate = "INVALID")
-                    }
-                },
-                    onDismiss = {openBookWindow = false}
-                )
-            }
-            Text("Booking must be after registration period.\nBooking and Registration periods must not overlap.", fontSize = 12.sp)
         }
+        else{
+            item{
+                Text("Please Enter a Registration Period before a Booking Period.")
+            }
+        }
+
         item{
             AppInputTextField(
                 value = numWinners,
@@ -196,7 +215,7 @@ fun LotteryRegistrationScreen(
         }
 
         item{
-            LargeButtonPrimary(text = "Save Lottery", onClick = {
+            LargeButtonPrimary(text = "Create Lottery", onClick = {
                 //fetch corresponding campsite IDs of the Campsites chosen
                 val selectedSitesObjects = campsites.filter { it.name in selectedCampsites }
 
@@ -207,17 +226,10 @@ fun LotteryRegistrationScreen(
                     numWinners.isEmpty() || numWinners.toInt() <= 0 -> "Enter the number of winners a lottery can have (greater than 0)"
                     waitlistCapacity.isEmpty() || waitlistCapacity.toInt() < -1 -> "Enter the number of Users that can join the waitlist (or -1 if no limit)."
                     else -> null
-                    /*also need to check for:
-                    - registration and booking overlapping
-                    - booking BEFORE registration
-                     */
                 }
-
-                println("${selectedSitesObjects} and ${selectedSitesObjects.map {it.id}}")
 
                 //if all passes, then publish to firebase
                 if (error == null){
-                    println("saved successfully")
                     vm.callPublishLottery(
                         campsiteIDs = selectedSitesObjects.map { it.id },
                         ownerID = placeholderOwnerId,
@@ -225,7 +237,6 @@ fun LotteryRegistrationScreen(
                         bookingPeriod = bookingPeriod,
                         maxWinners = numWinners.toInt(),
                         capacity = if (waitlistCapacity.toInt() == -1) null else waitlistCapacity.toInt(),
-                        onDone = onDone
                     )
                 }
             })

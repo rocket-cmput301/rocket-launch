@@ -22,7 +22,6 @@ package com.example.rl_v1.model
  * @property cancellationPolicy Cancellation terms.
  * @property availability Dates the campsite posting is available to be reserved.
  * @property geographicFeature Features near / around the Campsite (displayed as 'Tags')
- * @property lottery That campsite's corresponding lottery
  */
 data class Campsite(
     val id: String = "",
@@ -42,5 +41,4 @@ data class Campsite(
     val cancellationPolicy: String = "",
     val availability: DateAvailability? = null,
     val geographicFeature: List<String> = emptyList(),
-    //val lottery: Lottery? = null ; //may not need because multiple campsites can be in multiple lotteries
 )

@@ -129,9 +129,9 @@ class FakeLotteryRepository(
     }
 
     override fun observeWaitlistUsersByOwner(
-        campsiteId: String,
+        lotteryId: String,
         ownerId: String
-    ): Flow<Lottery> {
+    ): Flow<List<WaitlistEntry>> {
         TODO("Not yet implemented")
     }
 

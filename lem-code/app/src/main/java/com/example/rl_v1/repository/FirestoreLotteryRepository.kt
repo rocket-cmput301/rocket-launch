@@ -10,6 +10,7 @@
 
 package com.example.rl_v1.repository
 
+import android.system.Os.close
 import com.example.rl_v1.model.DateAvailability
 import com.example.rl_v1.model.Lottery
 import com.example.rl_v1.model.WaitlistEntry
@@ -57,8 +58,37 @@ class FirestoreLotteryRepository(
         return savedLottery
     }
 
+    /** Updates a new lottery and returns its already existing document ID  */
     override suspend fun updateLottery(lottery: Lottery) {
-        TODO("Not yet implemented")
+        //require(lottery.id.isNotBlank()) { "This lottery does not exist, cannot update; create a lottery instead." }
+        require(lottery.ownerId.isNotBlank()) { "An owner is required" }
+        require(lottery.campsiteIds.isNotEmpty()) { "No campsites have been selected for this lottery update." }
+        require(lottery.registrationPeriod.startDate.isNotEmpty() && lottery.registrationPeriod.endDate.isNotEmpty()) { "Registration Period invalid." }
+        require(lottery.bookingPeriod.startDate.isNotEmpty() && lottery.bookingPeriod.endDate.isNotEmpty()) { "Booking period invalid." }
+        require(lottery.maxWinners > 0) { "Requires positive (>0) number of lottery winners" }
+
+        //val document = lotteries.document()
+
+        val document = lotteries.document(lottery.id)
+        val snapshot = document.get().await()
+
+        require(snapshot.exists()) { "This lottery no longer exists" }
+
+
+        //require(snapshot.getString("ownerId") == lottery.ownerId) {                                  //actual
+        require(snapshot.getString("ownerId") == "8bkEYENWDCWqz4mRcdTnWGeLmbv2"){        //test placeholder
+            "You can only edit your own lotteries"
+        }
+
+        document.update(
+            mapOf(
+                "campsiteIds" to lottery.campsiteIds,
+                "registrationPeriod" to lottery.registrationPeriod,
+                "bookingPeriod" to lottery.bookingPeriod,
+                "maxWinners" to lottery.maxWinners,
+                "capacity" to lottery.capacity
+            )
+        ).await()
     }
 
     override suspend fun joinWaitlist(lotteryId: String, entrantId: String): Unit {
@@ -81,6 +111,7 @@ class FirestoreLotteryRepository(
             if (!exists.isEmpty){
                 println("Entrant already in lottery!")
                 // TODO: notify the user they are already in the lottery via UI: banner pop-up notification maybe?
+
             }
             else{
                 // one fixed id per entrant and lottery, so a double tap writes the same entry instead of a second one
@@ -103,14 +134,11 @@ class FirestoreLotteryRepository(
             .whereEqualTo("lotteryId", lotteryId)
             .limit(1)
             .get().await()
-        if (exists.isEmpty){
-            println("Entry does not exist")     //shouldn't expect to be printed at all
-        }
-        else{
+        if (!exists.isEmpty){
             for (document in exists.documents){
                 document.reference.delete().await()
             }
-            //println("successfully deleted entry")       //doesn't need to notify User since it disappears on their UI --
+            //doesn't need to notify User since it disappears on their UI --
         }
     }
 
@@ -138,7 +166,7 @@ class FirestoreLotteryRepository(
     override fun observeLotteriesByUser(userId: String, type: String): Flow<List<Lottery>>{
         return combine(observeAllLotteries(), observeEntriesByUser(userId)) { lotteries, entries ->
             when (type) {
-                "Selected" -> { //TODO: return a Flow List of Lotteries the User has won (been randomly selected in) after Lottery Selection has been implemented
+                "Selected" -> {     //return a Flow List of Lotteries the User has won (been randomly selected in)
                     val openLotteries = lotteries.filter {it.status == "OPEN"}
                     val userWonEntries = entries.filter {
                         it.entrantId == userId &&
@@ -163,7 +191,7 @@ class FirestoreLotteryRepository(
                         openLotteries.find { it.id == entry.lotteryId }
                     }
                 }
-                "Not Selected" -> { //TODO: return a Flow List of Lotteries the User has lost after Lottery Selection has been implemented
+                "Not Selected" -> { //return a Flow List of Lotteries the User has lost
                     val openLotteries = lotteries.filter { it.status == "OPEN" }
                     val userLostEntries = entries.filter {
                         it.entrantId == userId &&
@@ -194,12 +222,38 @@ class FirestoreLotteryRepository(
         awaitClose { listener.remove() }
     }
 
-    override fun observeLotteriesByOwner(ownerId: String): Flow<List<Lottery>> {        //not needed by a user story
-        TODO("Not yet implemented")
+    override fun observeLotteriesByOwner(ownerId: String): Flow<List<Lottery>> = callbackFlow{        //not needed by a user story; but needed by Manage Campsites -> Lottery Screen
+        val query = lotteries.whereEqualTo("ownerId", ownerId)
+        val listener = query.addSnapshotListener { snapshot, error ->
+            if (error != null){
+                close(error)
+            }
+            else if (snapshot != null){
+                val entryList = snapshot.documents.mapNotNull { document ->
+                    document.toObject(Lottery::class.java)?.copy(id = document.id)
+                }
+                trySend(entryList)
+            }
+        }
+        awaitClose { listener.remove() }
     }
 
-    override fun observeWaitlistUsersByOwner(campsiteId: String, ownerId: String): Flow<Lottery> {       //US 02.09.01
-        TODO("Not yet implemented")
+    override fun observeWaitlistUsersByOwner(lotteryId: String, ownerId: String): Flow<List<WaitlistEntry>> = callbackFlow {
+        val query = waitlistEntries
+            .whereEqualTo("lotteryId", lotteryId)
+
+        val listener = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+            } else if (snapshot != null) {
+                val entryList = snapshot.documents.mapNotNull { document ->
+                    document.toObject(WaitlistEntry::class.java)
+                        ?.copy(id = document.id)
+                }
+                trySend(entryList)
+            }
+        }
+        awaitClose { listener.remove() }
     }
 
     override fun notifyWaitlistUsers(campsiteId: String, ownerId: String) {                       //US 02.10.01
@@ -306,12 +360,9 @@ class FirestoreLotteryRepository(
             .await()
         for (entry in chosenEntry.documents){                                               //for loop may not be the best way to do this but its the only way I know right now
             if (entry.toObject(WaitlistEntry::class.java)?.status == "WON"){    //check if its a winning entry (it should be)
-                entry.reference.update("status","TERMINATED").await()       //only then, change it to terminated
+                entry.reference.update("status","TERMINATED").await()        //only then, change it to terminated
 
                 //OPTIONALLY let the User provide a reason
-            }
-            else{
-                println("$entry is not a winning entry!")
             }
         }
     }
@@ -322,7 +373,6 @@ class FirestoreLotteryRepository(
             .get()
             .await()
         for (entry in toDelete.documents){
-            //println("WILL DELETE: $entry")
             entry.reference.delete()
         }
     }

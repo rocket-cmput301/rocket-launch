@@ -143,6 +143,15 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.id == lotteryId
         && request.resource.data.ownerId == request.auth.uid;
+
+      //Owner only; id and ownerId cannot change
+      allow update: if request.auth != null
+        //&& resource.data.ownerId == request.auth.uid      - will be uncommented when roles are implemented and feature is adapted properly, in the meantime only works for hardcoded owner id
+        //&& !request.resource.data.id.diff(resource.data)  - will be uncommented when roles are implemented and feature is adapted properly, in the meantime only works for hardcoded owner id
+        //.affectedKeys().hasAny(['id', 'ownerId']);        - will be uncommented when roles are implemented and feature is adapted properly, in the meantime only works for hardcoded owner id
+
+      //Owner only
+      allow delete: if false;
     }
 
     //WaitlistEntry Rule
